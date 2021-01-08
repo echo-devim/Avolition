@@ -131,7 +131,7 @@ class AI_level_editor(DirectObject):
             self.edit_mode="spawnpoints"
         else:
             self.edit_mode="walls"
-        print "Editing ", self.edit_mode 
+        print("Editing ", self.edit_mode)
     
     def build_polyset(self, points, position, tag=None, mask=1, z=0):
         polyset=render.attachNewNode(CollisionNode('collisionPolyset'))                         
@@ -162,12 +162,12 @@ class AI_level_editor(DirectObject):
     def generate_map(self, name="temp"):
         VP=VisibilityPolygon()
         segments = VP.convertToSegments(self.polygons)        
-        print "segments: ", segments
+        print("segments: ", segments)
         export_node=NodePath(PandaNode("map"))        
         waypoints=[]
         for wp in render.findAllMatches("**/collRayNode*"):
             position = [wp.getX(render), wp.getY(render)]
-            print "pos:",position 
+            print("pos:",position)
             visibility = VP.compute(position, segments) 
             #print "visibility: ", visibility
             tag=wp.getNetTag("index")
@@ -215,7 +215,7 @@ class AI_level_editor(DirectObject):
             temp.setPos(spawnpoint.getPos(render))            
         #write
         export_node.writeBamFile('models/'+name+'.bam')         
-        print "DONE"
+        print("DONE")
         
     def close_polygon(self, point):
         x=point.getX()
@@ -224,8 +224,8 @@ class AI_level_editor(DirectObject):
             self.polygons.append(self.current_polygon)
             self.current_polygon=[]
             self.undo=False
-            print  "new polygon added" 
-            print self.polygons
+            print("new polygon added")
+            print(self.polygons)
         else:
             self.add_wall()
         
@@ -279,7 +279,7 @@ class AI_level_editor(DirectObject):
                 self.close_polygon(self.pointer.getPos())
         else:
             self.spawnpoints.append(self.pointer.copyTo(render))
-            print self.spawnpoints
+            print(self.spawnpoints)
             
     def orient_wall(self, task):
         if not self.new_wall:
