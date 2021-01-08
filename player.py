@@ -134,10 +134,13 @@ class Player(DirectObject):
         
         #camera
         self.cameraNode  = render.attachNewNode("cameraNode")         
-        self.cameraNode.setZ(-1)
-        base.camera.setPos(0, -14, 13)
-        #base.camera.setY(-12)
-        #base.camera.setZ(12)
+        self.cameraNode.setPos(0, -2.5, 0)
+        self.cameraNode.setHpr(0, -10, 0)
+        #base.camera.setHpr ( 0, 10, 0 )
+        #base.camera.setPos(0, 0, 7)
+        #base.camera.setY(-6)
+        #base.camera.setZ(2.7)
+        #base.camera.setP(-13)
         base.camera.lookAt(self.node)
         base.camera.wrtReparentTo(self.cameraNode)  
         self.pointer=self.cameraNode.attachNewNode("pointerNode")         
@@ -1879,44 +1882,7 @@ class PC4(Player):
         self.magmaSound=base.loader.loadSfx("sfx/magma_flow2.ogg")
         self.magmaSound.setLoop(True)  
 
-        #camera
-        self.cameraNode  = render.attachNewNode("cameraNode")         
-        self.cameraNode.setZ(-1)
-        base.camera.setPos(0, -14, 13)
-        #base.camera.setY(-12)
-        #base.camera.setZ(12)
-        base.camera.lookAt(self.node)
-        base.camera.wrtReparentTo(self.cameraNode)  
-        self.pointer=self.cameraNode.attachNewNode("pointerNode")         
-        self.autoCamera=True
-        self.pauseCamera=False
-        #self.zonk=render.attachNewNode("zonk")         
-        #self.zonk.setPos(-12,0,0)
-        
-        #light
-        self.pLight = PointLight('plight')
-        #self.pLight.setColor(VBase4(.7, .7, .8, 1))
-        self.pLight.setColor(VBase4(.9, .9, 1.0, 1))
-        #self.pLight.setAttenuation(Point3(3, 0, 0)) 
-        self.pLight.setAttenuation(Point3(2, 0, 0.5))         
-        self.pLightNode = render.attachNewNode(self.pLight) 
-        #self.pLightNode.setZ(3.0)
-        render.setLight(self.pLightNode)
-        
-        self.sLight=Spotlight('sLight')        
-        #self.sLight.setColor(VBase4(.4, .35, .35, 1))
-        self.sLight.setColor(VBase4(.5, .45, .45, 1))
-        if self.common['extra_ambient']:
-            self.sLight.setColor(VBase4(.7, .6, .6, 1))
-            #print "extra ambient"
-        spot_lens = PerspectiveLens()
-        spot_lens.setFov(160)
-        self.sLight.setLens(spot_lens)
-        self.Ambient = self.cameraNode.attachNewNode( self.sLight)
-        self.Ambient.setPos(base.camera.getPos(render))
-        self.Ambient.lookAt(self.node)
-        render.setLight(self.Ambient)
-
+        #TODO: aura unused at the moment
         self.aura=vfx(self.actor, texture='vfx/aura2.png',scale=.75, Z=.85, depthTest=False, depthWrite=False)
         self.aura.loop(0.02)
         self.powerUp=0
