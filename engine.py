@@ -227,10 +227,10 @@ class Monster():
 
         #collision sphere
         self.coll_sphere=self.node.attachNewNode(CollisionNode('monsterSphere'))
-        self.coll_sphere.node().addSolid(CollisionSphere(0, 0, 0.8, 0.8))
+        self.coll_sphere.node().addSolid(CollisionSphere(0, 0, 0.8, 0.6))
         self.coll_sphere.setTag("id", str(id))
         self.coll_sphere.node().setIntoCollideMask(BitMask32.bit(3))
-        #coll_sphere.show()
+        #self.coll_sphere.show()
 
         #other monster blocking
         self.coll_quad=loader.loadModel("models/plane")
