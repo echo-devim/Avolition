@@ -256,10 +256,10 @@ class Player(DirectObject):
         self.accept(common['keymap']['key_forward'][0]+"-up", self.keyMap.__setitem__, ["key_forward", False])
         
         #camera zoom
-        self.accept(common['keymap']['key_zoomin'][0], self.zoom_control,[0.1])
-        self.accept(common['keymap']['key_zoomout'][0],self.zoom_control,[-0.1])
-        self.accept(common['keymap']['key_zoomin'][1], self.zoom_control,[0.1])
-        self.accept(common['keymap']['key_zoomout'][1],self.zoom_control,[-0.1])
+        #self.accept(common['keymap']['key_zoomin'][0], self.zoom_control,[0.1])
+        #self.accept(common['keymap']['key_zoomout'][0],self.zoom_control,[-0.1])
+        #self.accept(common['keymap']['key_zoomin'][1], self.zoom_control,[0.1])
+        #self.accept(common['keymap']['key_zoomout'][1],self.zoom_control,[-0.1])
         
         #self.keyMap = { "w" : False,
         #                "s" : False,
