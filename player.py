@@ -26,8 +26,17 @@ from vfx import MovingVfx
 import random
 from direct.showbase.PythonUtil import fitSrcAngle2Dest
 
-class PC1(DirectObject):    
+class Player(DirectObject):
     
+    def resetPointer(self, point3D):
+        p3 = base.cam.getRelativePoint(render, point3D)
+        p2 = Point2()
+        newPos=(0,0,0)
+        if base.camLens.project(p3, p2):
+            r2d = Point3(p2[0], 0, p2[1])
+            newPos = pixel2d.getRelativePoint(render2d, r2d)                            
+            base.win.movePointer(0,int(newPos[0]),-int(newPos[2]))
+
     def onLevelLoad(self, common):
         self.node.setPos(0,0,0)
         self.black=common['map_black']
@@ -98,24 +107,7 @@ class PC1(DirectObject):
             self.node=common['player_node']
         else:
             self.node=render.attachNewNode("pc")        
-        #actor
-        self.actor=Actor("models/pc/male", {"attack1":"models/pc/male_attack1",
-                                            "attack2":"models/pc/male_attack2",
-                                            "walk":"models/pc/male_run",
-                                            "block":"models/pc/male_block",
-                                            "die":"models/pc/male_die",
-                                            "strafe":"models/pc/male_strafe2",
-                                            "hit":"models/pc/male_hit",
-                                            "idle":"models/pc/male_ready2"}) 
-        self.actor.setBlend(frameBlend = True)  
-        self.actor.setPlayRate(1.5, "attack1")
-        self.actor.setPlayRate(0.5, "strafe")
-        self.actor.setPlayRate(0.7, "die")
-        self.actor.reparentTo(self.node)
-        self.actor.setScale(.025)
-        self.actor.setH(180.0)       
-        self.actor.setBin("opaque", 10)        
-        #self.actor.setTransparency(TransparencyAttrib.MMultisample)
+
         self.isIdle=True
         
         #sounds                
@@ -176,10 +168,7 @@ class PC1(DirectObject):
         self.Ambient = self.cameraNode.attachNewNode( self.sLight)
         self.Ambient.setPos(base.camera.getPos(render))
         self.Ambient.lookAt(self.node)
-        render.setLight(self.Ambient)
-        
-        
-            
+        render.setLight(self.Ambient)          
         
         #shaders
         if not self.common['safemode']:    
@@ -289,19 +278,9 @@ class PC1(DirectObject):
         self.lastPos=self.node.getPos(render)
         self.camera_momentum=1.0
         self.powerUp=0
-        self.shieldUp=0
         self.actionLock=0
         self.hitMonsters=set()
         self.myWaypoints=[]
-        self.HP=50.0+float(self.common['pc_stat1'])
-        self.MaxHP=50.0+float(self.common['pc_stat1'])
-        self.HPregen=round((101-self.common['pc_stat1'])/100.0, 1)
-        self.blockPower=(50+(self.common['pc_stat2']+1)/2)/100.0
-        self.speed=(75+(101-self.common['pc_stat2'])/2)/100.0
-        self.actor.setPlayRate(self.speed, "walk")
-        self.damage_delta=(1.0+self.common['pc_stat3']/50.0)
-        self.crit_hit=(5+(101-self.common['pc_stat3'])/2)/100.0
-        self.crit_dmg=5+(101-self.common['pc_stat3'])/5
         
         #gui
         wp = base.win.getProperties()
@@ -475,46 +454,19 @@ class PC1(DirectObject):
         self.common['traverser'].addCollider(self.coll_ray, self.common['queue'])
         
         #collision sphere
-        mask_2_3=BitMask32.bit(3)
-        mask_2_3.setBit(2)
+        self.mask_2_3=BitMask32.bit(3)
+        self.mask_2_3.setBit(2)
         self.coll_sphere=self.node.attachNewNode(CollisionNode('playerSphere'))
-        self.coll_sphere.node().addSolid(CollisionSphere(0, 0, 1, 0.4))   
+        self.coll_sphere.node().addSolid(CollisionSphere(0, 0, 0.8, 0.6))   
         self.coll_sphere.setTag("player", "1") 
         self.coll_sphere.node().setIntoCollideMask(BitMask32.bit(2))
-        self.coll_sphere.node().setFromCollideMask(mask_2_3)
+        self.coll_sphere.node().setFromCollideMask(self.mask_2_3)
         #self.traverser.addCollider(self.coll_sphere, self.queue)
         self.common['traverser'].addCollider(self.coll_sphere, self.common['queue'])
         #coll_sphere.show()
-        
-        hand=self.actor.exposeJoint(None, 'modelRoot', 'Bip001 R Hand')
-        self.attack_ray=self.node.attachNewNode(CollisionNode('attackRay'))
-        self.attack_ray.node().addSolid(CollisionSegment(0, 0, 0, 0, 0, 24))
-        self.attack_ray.setTag("attack", "1") 
-        self.attack_ray.node().setIntoCollideMask(BitMask32.allOff())
-        self.attack_ray.node().setFromCollideMask(BitMask32.allOff())
-        #self.attack_ray.show()
-        self.attack_ray.reparentTo(hand)
-        self.attack_ray.setX(self.attack_ray, 3)
-        self.attack_ray.setHpr(self.attack_ray, (0,-5,-2))
-        #self.traverser.addCollider(self.attack_ray, self.queue)
-        self.common['traverser'].addCollider(self.attack_ray, self.common['queue'])
-        
-        self.accept( 'window-event', self.windowEventHandler) 
-        self.accept("escape",self.optionsSet, ['close'])
-        
+
         taskMgr.add(self.__getMousePos, "mousePosTask")
-        taskMgr.add(self.update, "updatePC")                        
-        taskMgr.doMethodLater(0.05, self.shield_task,'shield_task')
-        taskMgr.doMethodLater(0.05, self.sword_task,'sword_task')
-        taskMgr.doMethodLater(1.0, self.regenerate,'regenerate_task')
-    
-    def regenerate(self, task):
-        if self.MaxHP>self.HP>0:
-            self.HP+=self.HPregen
-            self.healthBar.setScale(10*self.HP/self.MaxHP,1, 1)
-            green=self.HP/self.MaxHP
-            self.healthBar['frameColor']=(1-green, green, 0, 1)
-        return task.again 
+        taskMgr.add(self.update, "updatePC")
         
     def optionsSet(self, opt, event=None):
         if opt!="close" and opt!="audio" and opt!="music":
@@ -630,84 +582,6 @@ class PC1(DirectObject):
         #self.keyMap["s"]=False
         #self.keyMap["a"]=False
         #self.keyMap["d"]=False
-        
-    def attack(self, power=1):       
-        self.attack_ray.node().setFromCollideMask(BitMask32.allOff())   
-        #print self.hitMonsters
-        if self.hitMonsters:        
-            for monster in self.hitMonsters:
-            #monster=self.hitMonsters.pop()            
-                if monster:
-                    monster=self.monster_list[int(monster)]
-                    if monster:
-                        monster.onHit(power*self.damage_delta)
-                        if self.crit_hit>random.random():
-                            Sequence(Wait(0.2), Func(monster.onHit, self.crit_dmg)).start()
-        self.hitMonsters=set()
-        
-    def sword_task(self, task):
-        if self.HP<=0:
-            return task.done
-        if self.isBlockin:
-            return task.again  
-        if self.keyMap["key_action1"]:
-            if self.powerUp>=15:
-               return task.again  
-            self.powerUp+=1
-            self.cursorPowerUV[0]+=0.25
-            if self.cursorPowerUV[0]>0.75:
-                self.cursorPowerUV[0]=0
-                self.cursorPowerUV[1]+=-0.25
-            self.cursorPower.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV[0], self.cursorPowerUV[1])    
-        else:             
-            if self.powerUp>8:
-                self.sounds["walk"].stop()
-                self.actor.play("attack2") 
-                self.sounds["swing2"].play()
-                self.attack_ray.node().setFromCollideMask(BitMask32.bit(3))
-                Sequence(Wait(.3), Func(self.attack, self.powerUp)).start()
-            elif self.powerUp>0:
-                self.sounds["walk"].stop()
-                self.actor.play("attack1") 
-                self.sounds["swing1"].play()
-                self.attack_ray.node().setFromCollideMask(BitMask32.bit(3))
-                Sequence(Wait(.2), Func(self.attack, self.powerUp)).start()
-            self.powerUp=0
-            self.cursorPowerUV=[0.0, 0.75]
-            self.cursorPower.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV[0], self.cursorPowerUV[1])             
-        return task.again 
-    
-    def unBlock(self):
-        self.isBlockin=False 
-        
-    def shield_task(self, task):
-        if self.HP<=0:
-            return task.done
-        if self.keyMap["key_action2"]:               
-            if self.shieldUp>=15:
-                #self.isBlockin=False 
-                Sequence(Wait(0.3), Func(self.unBlock)).start()
-                return task.again 
-            self.isBlockin=True     
-            self.shieldUp+=1
-            #self.cursor['frameTexture']='icon/shield.png' 
-            self.cursorPowerUV2[0]+=0.25
-            if self.cursorPowerUV2[0]>0.75:
-                self.cursorPowerUV2[0]=0
-                self.cursorPowerUV2[1]+=-0.25            
-            self.cursorPower2.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV2[0], self.cursorPowerUV2[1]) 
-        else:            
-            self.isBlockin=False
-            if self.shieldUp<0:            
-               return task.again
-            #self.cursor['frameTexture']='icon/sword.png'    
-            self.shieldUp-=1   
-            self.cursorPowerUV2[0]-=0.25
-            if self.cursorPowerUV2[0]<0:
-                self.cursorPowerUV2[0]=0.75
-                self.cursorPowerUV2[1]+=0.25           
-            self.cursorPower2.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV2[0], self.cursorPowerUV2[1])               
-        return task.again
         
     def zoom_control(self, amount):
         LerpFunc(self.zoom,fromData=0,toData=amount, duration=.5, blendType='easeOut').start()
@@ -839,9 +713,12 @@ class PC1(DirectObject):
             if self.plane.intersectsLine(pos3d, render.getRelativePoint(camera, nearPoint),render.getRelativePoint(camera, farPoint)):            
                 #if self.camera_momentum==0:
                 if self.HP>0:            
-                    self.node.headsUp(pos3d) 
+                    self.node.headsUp(pos3d)
                 self.pLightNode.setPos(pos3d)
-                self.pLightNode.setZ(2.7) 
+                self.pLightNode.setZ(2.7)
+                if hasattr(self, "target_node"):
+                    self.target_node.setPos(pos3d)                
+                    self.target_node.setZ(0.05)
                 if not self.common['safemode']:
                     if self.node.getDistance(self.pLightNode)<13.0: 
                         self.common['shadowNode'].setPos(self.pLightNode.getPos(render))
@@ -868,13 +745,7 @@ class PC1(DirectObject):
         if taskMgr.hasTaskNamed("mousePosTask"):
             taskMgr.remove("mousePosTask")
         if taskMgr.hasTaskNamed("updatePC"):
-            taskMgr.remove("updatePC")
-        if taskMgr.hasTaskNamed("shield_task"):
-            taskMgr.remove("shield_task")
-        if taskMgr.hasTaskNamed("sword_task"):
-            taskMgr.remove("sword_task")            
-        if taskMgr.hasTaskNamed("regenerate_task"):
-            taskMgr.remove("regenerate_task")     
+            taskMgr.remove("updatePC")    
         self.healthFrame.destroy()
         self.healthBar.destroy()
         self.cursor.destroy()
@@ -929,73 +800,155 @@ class PC1(DirectObject):
         self.node.setPos(0,0,0)
         self.common['player_node']=self.node
         self.common['CharGen'].load()
+
+class PC1(Player):      
+    
+    def __init__(self, common): 
+        super().__init__(common)
+        #actor
+        self.actor=Actor("models/pc/male", {"attack1":"models/pc/male_attack1",
+                                            "attack2":"models/pc/male_attack2",
+                                            "walk":"models/pc/male_run",
+                                            "block":"models/pc/male_block",
+                                            "die":"models/pc/male_die",
+                                            "strafe":"models/pc/male_strafe2",
+                                            "hit":"models/pc/male_hit",
+                                            "idle":"models/pc/male_ready2"}) 
+        self.actor.setBlend(frameBlend = True)  
+        self.actor.setPlayRate(1.5, "attack1")
+        self.actor.setPlayRate(0.5, "strafe")
+        self.actor.setPlayRate(0.7, "die")
+        self.actor.reparentTo(self.node)
+        self.actor.setScale(.025)
+        self.actor.setH(180.0)       
+        self.actor.setBin("opaque", 10)
         
-class PC2(DirectObject):
-    def onLevelLoad(self, common):
-        self.node.setPos(0,0,0)
-        self.black=common['map_black']
-        self.walls=common['map_walls']
-        self.floor=common['map_floor']
-        #print self.black, self.walls, self.floor
-        self.monster_list=common['monsterList']
-        if not self.common['safemode']:
-            wall_shader=loader.loadShader('tiles.sha')
-            black_shader=loader.loadShader('black_parts.sha')
-            floor_shader=loader.loadShader('floor.sha')
-            self.floor.setShader(floor_shader)
-            self.walls.setShader(wall_shader)
-            self.black.setShader(black_shader)            
-            self.floor.hide(BitMask32.bit(1)) 
-        #shaders
-        if not self.common['safemode']:    
-            render.setShaderInput("slight0", self.Ambient)        
-            render.setShaderInput("plight0", self.pLightNode)
-            
-            tex = loader.loadTexture('fog2.png')
-            self.proj = render.attachNewNode(LensNode('proj'))
-            #lens = OrthographicLens()        
-            #lens.setFilmSize(3, 3)  
-            lens=PerspectiveLens()        
-            lens.setFov(45)
-            self.proj.node().setLens(lens)
-            #self.proj.node().showFrustum() 
-            self.proj.reparentTo(render)
-            self.proj.setHpr(180, 45, 0)
-            self.proj.setZ(0.0)
-            self.proj.reparentTo(self.cameraNode)
-            ts = TextureStage('ts')
-            tex.setWrapU(Texture.WMBorderColor  )
-            tex.setWrapV(Texture.WMBorderColor  )
-            tex.setBorderColor(Vec4(1,1,1,1))  
-            self.black.projectTexture(ts, tex, self.proj)        
-            self.walls.projectTexture(ts, tex, self.proj)       
+        self.shieldUp=0
+        self.HP=50.0+float(self.common['pc_stat1'])
+        self.MaxHP=50.0+float(self.common['pc_stat1'])
+        self.HPregen=round((101-self.common['pc_stat1'])/100.0, 1)
+        self.blockPower=(50+(self.common['pc_stat2']+1)/2)/100.0
+        self.speed=(75+(101-self.common['pc_stat2'])/2)/100.0
+        self.actor.setPlayRate(self.speed, "walk")
+        self.damage_delta=(1.0+self.common['pc_stat3']/50.0)
+        self.crit_hit=(5+(101-self.common['pc_stat3'])/2)/100.0
+        self.crit_dmg=5+(101-self.common['pc_stat3'])/5
         
-            #shadows    
-            self.floor.projectTexture(self.common['shadow_ts'] , self.common['shadowTexture'], self.common['shadowCamera'])  
-            #base.bufferViewer.toggleEnable()
-            #base.bufferViewer.setPosition("ulcorner")
-            #base.bufferViewer.setCardSize(.5, 0.0)     
+        hand=self.actor.exposeJoint(None, 'modelRoot', 'Bip001 R Hand')
+        self.attack_ray=self.node.attachNewNode(CollisionNode('attackRay'))
+        self.attack_ray.node().addSolid(CollisionSegment(0, 0, 0, 0, 0, 24))
+        self.attack_ray.setTag("attack", "1") 
+        self.attack_ray.node().setIntoCollideMask(BitMask32.allOff())
+        self.attack_ray.node().setFromCollideMask(BitMask32.allOff())
+        #self.attack_ray.show()
+        self.attack_ray.reparentTo(hand)
+        self.attack_ray.setX(self.attack_ray, 3)
+        self.attack_ray.setHpr(self.attack_ray, (0,-5,-2))
+        #self.traverser.addCollider(self.attack_ray, self.queue)
+        self.common['traverser'].addCollider(self.attack_ray, self.common['queue'])
+           
+        taskMgr.doMethodLater(0.05, self.shield_task,'shield_task')
+        taskMgr.doMethodLater(0.05, self.sword_task,'sword_task')
+        taskMgr.doMethodLater(1.0, self.regenerate,'regenerate_task')
+
+    def attack(self, power=1):       
+        self.attack_ray.node().setFromCollideMask(BitMask32.allOff())   
+        #print self.hitMonsters
+        if self.hitMonsters:        
+            for monster in self.hitMonsters:
+            #monster=self.hitMonsters.pop()            
+                if monster:
+                    monster=self.monster_list[int(monster)]
+                    if monster:
+                        monster.onHit(power*self.damage_delta)
+                        if self.crit_hit>random.random():
+                            Sequence(Wait(0.2), Func(monster.onHit, self.crit_dmg)).start()
+        self.hitMonsters=set()
+           
+    def unBlock(self):
+        self.isBlockin=False
+
+    def regenerate(self, task):
+        if self.MaxHP>self.HP>0:
+            self.HP+=self.HPregen
+            self.healthBar.setScale(10*self.HP/self.MaxHP,1, 1)
+            green=self.HP/self.MaxHP
+            self.healthBar['frameColor']=(1-green, green, 0, 1)
+        return task.again
+  
+    def sword_task(self, task):
+        if self.HP<=0:
+            return task.done
+        if self.isBlockin:
+            return task.again  
+        if self.keyMap["key_action1"]:
+            if self.powerUp>=15:
+               return task.again  
+            self.powerUp+=1
+            self.cursorPowerUV[0]+=0.25
+            if self.cursorPowerUV[0]>0.75:
+                self.cursorPowerUV[0]=0
+                self.cursorPowerUV[1]+=-0.25
+            self.cursorPower.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV[0], self.cursorPowerUV[1])    
+        else:             
+            if self.powerUp>8:
+                self.sounds["walk"].stop()
+                self.actor.play("attack2") 
+                self.sounds["swing2"].play()
+                self.attack_ray.node().setFromCollideMask(BitMask32.bit(3))
+                Sequence(Wait(.3), Func(self.attack, self.powerUp)).start()
+            elif self.powerUp>0:
+                self.sounds["walk"].stop()
+                self.actor.play("attack1") 
+                self.sounds["swing1"].play()
+                self.attack_ray.node().setFromCollideMask(BitMask32.bit(3))
+                Sequence(Wait(.2), Func(self.attack, self.powerUp)).start()
+            self.powerUp=0
+            self.cursorPowerUV=[0.0, 0.75]
+            self.cursorPower.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV[0], self.cursorPowerUV[1])             
+        return task.again 
+
+    def shield_task(self, task):
+        if self.HP<=0:
+            return task.done
+        if self.keyMap["key_action2"]:               
+            if self.shieldUp>=15:
+                #self.isBlockin=False 
+                Sequence(Wait(0.3), Func(self.unBlock)).start()
+                return task.again 
+            self.isBlockin=True     
+            self.shieldUp+=1
+            #self.cursor['frameTexture']='icon/shield.png' 
+            self.cursorPowerUV2[0]+=0.25
+            if self.cursorPowerUV2[0]>0.75:
+                self.cursorPowerUV2[0]=0
+                self.cursorPowerUV2[1]+=-0.25            
+            self.cursorPower2.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV2[0], self.cursorPowerUV2[1]) 
+        else:            
+            self.isBlockin=False
+            if self.shieldUp<0:            
+               return task.again
+            #self.cursor['frameTexture']='icon/sword.png'    
+            self.shieldUp-=1   
+            self.cursorPowerUV2[0]-=0.25
+            if self.cursorPowerUV2[0]<0:
+                self.cursorPowerUV2[0]=0.75
+                self.cursorPowerUV2[1]+=0.25           
+            self.cursorPower2.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV2[0], self.cursorPowerUV2[1])               
+        return task.again
+       
+    def destroy(self): 
+        if taskMgr.hasTaskNamed("shield_task"):
+            taskMgr.remove("shield_task")
+        if taskMgr.hasTaskNamed("sword_task"):
+            taskMgr.remove("sword_task")
+        if taskMgr.hasTaskNamed("regenerate_task"):
+            taskMgr.remove("regenerate_task")
+        super().destroy()
+        
+class PC2(Player):  
     def __init__(self, common):
-        self.common=common
-        self.black=common['map_black']
-        self.walls=common['map_walls']
-        self.floor=common['map_floor']
-        self.monster_list=common['monsterList']
-        self.audio3d=common['audio3d']
-        
-        if not self.common['safemode']:
-            wall_shader=loader.loadShader('tiles.sha')
-            black_shader=loader.loadShader('black_parts.sha')
-            floor_shader=loader.loadShader('floor.sha')
-            self.floor.setShader(floor_shader)
-            self.walls.setShader(wall_shader)
-            self.black.setShader(black_shader)
-        
-        #parent node
-        if 'player_node' in common:
-            self.node=common['player_node']
-        else:
-            self.node=render.attachNewNode("pc")         
+        super().__init__(common)     
         #actor
         if self.common['nude']:
             self.actor=Actor("models/pc/female_nude", {"attack1":"models/pc/female_attack1",
@@ -1023,167 +976,21 @@ class PC2(DirectObject):
         self.actor.node().setFinal(True)        
         #self.actor.setBin("opaque", 10)
         #self.actor.setTransparency(TransparencyAttrib.MMultisample)
-        self.isIdle=True
         
-        #sounds        
-        self.sounds={'walk':self.audio3d.loadSfx("sfx/walk_new.ogg"),        
-                     'door_open':self.audio3d.loadSfx("sfx/door_open2.ogg"),
-                     'door_locked':self.audio3d.loadSfx("sfx/door_locked.ogg"),
-                     'key':self.audio3d.loadSfx("sfx/key_pickup.ogg"),
-                     'heal':self.audio3d.loadSfx("sfx/heal.ogg"),
-                     'pain1':self.audio3d.loadSfx("sfx/fem_pain1.ogg"),
-                     'pain2':self.audio3d.loadSfx("sfx/fem_pain2.ogg"),
-                     'plasma_charge':self.audio3d.loadSfx("sfx/plasma_charge.ogg"),                     
-                     'lightning1':self.audio3d.loadSfx("sfx/thunder2.ogg"),                    
-                     'lightning2':self.audio3d.loadSfx("sfx/thunder3.ogg"),  
-                     'heal':self.audio3d.loadSfx("sfx/heal3.ogg")
-                    }
-        self.sounds['walk'].setLoop(True)
-        
-        for sound in self.sounds:
-            self.audio3d.attachSoundToObject(self.sounds[sound], self.node)
-        
+        self.lightningOn=0
+        self.isLightning=False
+
+        self.sounds['pain1']=self.audio3d.loadSfx("sfx/fem_pain1.ogg")
+        self.sounds['pain2']=self.audio3d.loadSfx("sfx/fem_pain2.ogg")
+        self.sounds['plasma_charge']=self.audio3d.loadSfx("sfx/plasma_charge.ogg")
+        self.sounds['lightning1']=self.audio3d.loadSfx("sfx/thunder2.ogg")                    
+        self.sounds['lightning2']=self.audio3d.loadSfx("sfx/thunder3.ogg")
         self.sounds['plasma_fly']=self.audio3d.loadSfx("sfx/plasma_fly_loop.ogg")
         self.sounds['plasma_hit']=self.audio3d.loadSfx("sfx/plasma_hit.ogg")
         
         self.sounds['plasma_fly'].setLoop(True)
         
-        #camera
-        self.cameraNode  = render.attachNewNode("cameraNode")         
-        self.cameraNode.setZ(-1)
-        base.camera.setPos(0, -14, 13)
-        #base.camera.setY(-12)
-        #base.camera.setZ(12)
-        base.camera.lookAt(self.node)
-        base.camera.wrtReparentTo(self.cameraNode)  
-        self.pointer=self.cameraNode.attachNewNode("pointerNode")         
-        self.autoCamera=True
-        self.pauseCamera=False
-        
-        #self.zonk=render.attachNewNode("zonk")         
-        #self.zonk.setPos(-12,0,0)
-        
-        #light
-        self.pLight = PointLight('plight')
-        #self.pLight.setColor(VBase4(.4, .4, .5, 1))
-        #self.pLight.setColor(VBase4(.8, .8, .9, 1))
-        self.pLight.setColor(VBase4(.9, .9, 1.0, 1))
-        #self.pLight.setColor(VBase4(.7, .7, .8, 1))
-        #self.pLight.setAttenuation(Point3(3, 0, 0)) 
-        self.pLight.setAttenuation(Point3(2, 0, 0.5))        
-        self.pLightNode = render.attachNewNode(self.pLight) 
-        #self.pLightNode.setZ(3.0)
-        render.setLight(self.pLightNode)
-        
-        self.sLight=Spotlight('sLight')
-        #self.sLight.setColor(VBase4(.3, .25, .25, 1))
-        #self.sLight.setColor(VBase4(.4, .35, .35, 1))
-        self.sLight.setColor(VBase4(.5, .45, .45, 1))
-        if self.common['extra_ambient']:
-            self.sLight.setColor(VBase4(.7, .6, .6, 1))
-        spot_lens = PerspectiveLens()
-        spot_lens.setFov(160)
-        self.sLight.setLens(spot_lens)
-        self.Ambient = self.cameraNode.attachNewNode( self.sLight)
-        self.Ambient.setPos(base.camera.getPos(render))
-        self.Ambient.lookAt(self.node)
-        render.setLight(self.Ambient)
-        
-        if not self.common['safemode']:
-            #shaders
-            render.setShaderInput("slight0", self.Ambient)        
-            render.setShaderInput("plight0", self.pLightNode)
-            
-            tex = loader.loadTexture('fog2.png')
-            self.proj = render.attachNewNode(LensNode('proj'))
-            #lens = OrthographicLens()        
-            #lens.setFilmSize(3, 3)  
-            lens=PerspectiveLens()        
-            lens.setFov(45)
-            self.proj.node().setLens(lens)
-            #self.proj.node().showFrustum() 
-            self.proj.reparentTo(render)
-            self.proj.setHpr(180, 45, 0)
-            self.proj.setZ(0.0)
-            self.proj.reparentTo(self.cameraNode)
-            ts = TextureStage('ts')
-            tex.setWrapU(Texture.WMBorderColor  )
-            tex.setWrapV(Texture.WMBorderColor  )
-            tex.setBorderColor(Vec4(1,1,1,1))  
-            self.black.projectTexture(ts, tex, self.proj)        
-            self.walls.projectTexture(ts, tex, self.proj)
-            
-            
-            #shadows    
-            self.floor.projectTexture(self.common['shadow_ts'] , self.common['shadowTexture'], self.common['shadowCamera'])  
-            #base.bufferViewer.toggleEnable()
-            #base.bufferViewer.setPosition("ulcorner")
-            #base.bufferViewer.setCardSize(.5, 0.0) 
-        
-        #the plane will by used to see where the mouse pointer is
-        self.plane = Plane(Vec3(0, 0, 1), Point3(0, 0, 1))        
-        
-        #key mapping
-        self.keyMap = {'key_forward': False,
-                        'key_back': False,
-                        'key_left': False,
-                        'key_right': False,
-                        'key_cam_left': False,
-                        'key_cam_right': False,
-                        'key_action1': False,
-                        'key_action2': False}
-        #prime key
-        self.accept(common['keymap']['key_forward'][0], self.keyMap.__setitem__, ["key_forward", True])
-        self.accept(common['keymap']['key_back'][0], self.keyMap.__setitem__, ["key_back", True])
-        self.accept(common['keymap']['key_left'][0], self.keyMap.__setitem__, ["key_left", True])
-        self.accept(common['keymap']['key_right'][0], self.keyMap.__setitem__, ["key_right", True])
-        self.accept(common['keymap']['key_cam_left'][0], self.keyMap.__setitem__, ["key_cam_left", True])
-        self.accept(common['keymap']['key_cam_right'][0], self.keyMap.__setitem__, ["key_cam_right", True])
-        self.accept(common['keymap']['key_action1'][0], self.keyMap.__setitem__, ["key_action1", True])
-        self.accept(common['keymap']['key_action2'][0], self.keyMap.__setitem__, ["key_action2", True])
-        #alt key
-        self.accept(common['keymap']['key_forward'][1], self.keyMap.__setitem__, ["key_forward", True])
-        self.accept(common['keymap']['key_back'][1], self.keyMap.__setitem__, ["key_back", True])
-        self.accept(common['keymap']['key_left'][1], self.keyMap.__setitem__, ["key_left", True])
-        self.accept(common['keymap']['key_right'][1], self.keyMap.__setitem__, ["key_right", True])
-        self.accept(common['keymap']['key_cam_left'][1], self.keyMap.__setitem__, ["key_cam_left", True])
-        self.accept(common['keymap']['key_cam_right'][1], self.keyMap.__setitem__, ["key_cam_right", True])
-        self.accept(common['keymap']['key_action1'][1], self.keyMap.__setitem__, ["key_action1", True])
-        self.accept(common['keymap']['key_action2'][1], self.keyMap.__setitem__, ["key_action2", True])
-        self.accept(common['keymap']['key_forward'][0], self.keyMap.__setitem__, ["key_forward", True])
-        #prime key up
-        self.accept(common['keymap']['key_forward'][0]+"-up", self.keyMap.__setitem__, ["key_forward", False])
-        self.accept(common['keymap']['key_back'][0]+"-up", self.keyMap.__setitem__, ["key_back", False])
-        self.accept(common['keymap']['key_left'][0]+"-up", self.keyMap.__setitem__, ["key_left", False])
-        self.accept(common['keymap']['key_right'][0]+"-up", self.keyMap.__setitem__, ["key_right", False])
-        self.accept(common['keymap']['key_cam_left'][0]+"-up", self.keyMap.__setitem__, ["key_cam_left", False])
-        self.accept(common['keymap']['key_cam_right'][0]+"-up", self.keyMap.__setitem__, ["key_cam_right", False])
-        self.accept(common['keymap']['key_action1'][0]+"-up", self.keyMap.__setitem__, ["key_action1", False])
-        self.accept(common['keymap']['key_action2'][0]+"-up", self.keyMap.__setitem__, ["key_action2", False])
-        #alt key up
-        self.accept(common['keymap']['key_forward'][1]+"-up", self.keyMap.__setitem__, ["key_forward", False])
-        self.accept(common['keymap']['key_back'][1]+"-up", self.keyMap.__setitem__, ["key_back", False])
-        self.accept(common['keymap']['key_left'][1]+"-up", self.keyMap.__setitem__, ["key_left", False])
-        self.accept(common['keymap']['key_right'][1]+"-up", self.keyMap.__setitem__, ["key_right", False])
-        self.accept(common['keymap']['key_cam_left'][1]+"-up", self.keyMap.__setitem__, ["key_cam_left", False])
-        self.accept(common['keymap']['key_cam_right'][1]+"-up", self.keyMap.__setitem__, ["key_cam_right", False])
-        self.accept(common['keymap']['key_action1'][1]+"-up", self.keyMap.__setitem__, ["key_action1", False])
-        self.accept(common['keymap']['key_action2'][1]+"-up", self.keyMap.__setitem__, ["key_action2", False])
-        self.accept(common['keymap']['key_forward'][0]+"-up", self.keyMap.__setitem__, ["key_forward", False])
-        
-        #camera zoom
-        self.accept(common['keymap']['key_zoomin'][0], self.zoom_control,[0.1])
-        self.accept(common['keymap']['key_zoomout'][0],self.zoom_control,[-0.1])
-        self.accept(common['keymap']['key_zoomin'][1], self.zoom_control,[0.1])
-        self.accept(common['keymap']['key_zoomout'][1],self.zoom_control,[-0.1])
-        
-        self.lastPos=self.node.getPos(render)
-        self.camera_momentum=1.0
-        self.powerUp=0
-        self.lightningOn=0
-        self.actionLock=0
-        self.hitMonsters=set()
-        self.myWaypoints=[]
+        self.MaxHP=100.0
         self.HP=100.0
         self.blockPower=0.9    
         self.blast_size=(self.common['pc_stat1']+50)/100.0
@@ -1193,187 +1000,6 @@ class PC2(DirectObject):
         self.power_progress=1.0-(self.common['pc_stat3']/100.0)
         self.lastPos3d=None
         #print self.plasma_amp
-        #gui
-        wp = base.win.getProperties()
-        winX = wp.getXSize()
-        winY = wp.getYSize()
-        self.cursor=DirectFrame(frameSize=(-32, 0, 0, 32),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/cursor1.png',
-                                    parent=pixel2d)        
-        self.cursor.setPos(32,0, -32)
-        self.cursor.flattenLight()
-        self.cursor.setBin('fixed', 10)
-        self.cursor.setTransparency(TransparencyAttrib.MDual)
-        
-        self.cursorPowerUV=[0.0, 0.75]
-        self.cursorPower=DirectFrame(frameSize=(-64, 0, 0, 64),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/arc_grow2.png',
-                                    parent=self.cursor)
-        #self.cursorPower.setR(-45)
-        self.cursorPower.setPos(48,0, -48)
-        self.cursorPower.stateNodePath[0].setTexScale(TextureStage.getDefault(), 0.25, 0.25)        
-        self.cursorPower.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV[0], self.cursorPowerUV[1])
-        #self.cursor.setBin('fixed', 11)
-        self.cursorPower2=DirectFrame(frameSize=(-64, 0, 0, 64),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/arc_shrink.png',
-                                    parent=self.cursor)
-        self.cursorPowerUV2=[0.0, 0.75]
-        #self.cursorPower2.setR(135)
-        self.cursorPower2.setPos(48,0,-48)                                            
-        self.cursorPower2.stateNodePath[0].setTexScale(TextureStage.getDefault(), 0.25, 0.25)        
-        self.cursorPower2.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV2[0], self.cursorPowerUV2[1])
-        
-        self.healthFrame=DirectFrame(frameSize=(-512, 0, 0, 64),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/health_frame2.png',
-                                    parent=pixel2d)
-        self.healthFrame.setTransparency(TransparencyAttrib.MDual)
-        #self.healthFrame.setPos(512+200,0,-600)
-        
-        self.healthBar=DirectFrame(frameSize=(37, 0, 0, 16),
-                                    frameColor=(0, 1, 0, 1),
-                                    frameTexture='icon/glass4.png',
-                                    parent=pixel2d)
-        self.healthBar.setTransparency(TransparencyAttrib.MDual)
-        #self.healthBar.setPos(71+200,0,3-600)
-        self.healthBar.setScale(10,1, 1)        
-        self.isOptionsOpen=True
-        self.options=DirectFrame(frameSize=(-256, 0, 0, 128),
-                                    frameColor=(1,1,1,1),
-                                    frameTexture='icon/options.png',
-                                    parent=pixel2d)
-        self.options.setTransparency(TransparencyAttrib.MDual)
-        #self.options.setPos(210+winX,0,-128+84) 
-        self.options.setPos(winX,0,-128) 
-        self.options.setBin('fixed', 1)
-        self.options_close=DirectFrame(frameSize=(-32, 0, 0, 32),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_close.setPos(-221, 0, 5)
-        self.options_close.bind(DGG.B1PRESS, self.optionsSet,['close']) 
-        self.options_exit=DirectFrame(frameSize=(-200, 0, 0, 40),
-                                    frameColor=(1,1,1,0), 
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_exit.bind(DGG.B1PRESS, self.optionsSet,['exit'])                                    
-        self.options_slider1 = DirectSlider(range=(0,100),
-                                    value=self.common['soundVolume'],
-                                    pageSize=10,      
-                                    thumb_relief=DGG.FLAT,
-                                    thumb_frameTexture='glass3.png',
-                                    scale=70,
-                                    thumb_frameSize=(0.07, -0.07, -0.11, 0.11),
-                                    frameTexture='glass2.png',                                    
-                                    command=self.optionsSet,
-                                    extraArgs=["audio"],
-                                    parent=pixel2d) 
-        self.options_slider1.setBin('fixed', 2)                                         
-        self.options_slider1.setPos(-95+winX,0,-24) 
-        self.options_slider1.wrtReparentTo(self.options)
-        
-        self.options_slider2 = DirectSlider(range=(0,100),
-                                    value= self.common['musicVolume'],
-                                    pageSize=10,      
-                                    thumb_relief=DGG.FLAT,
-                                    thumb_frameTexture='glass3.png',
-                                    scale=70,
-                                    thumb_frameSize=(0.07, -0.07, -0.11, 0.11),
-                                    frameTexture='glass2.png',                                    
-                                    command=self.optionsSet,
-                                    extraArgs=["music"],
-                                    parent=pixel2d) 
-        self.options_slider2.setBin('fixed', 2)                                         
-        self.options_slider2.setPos(-95+winX,0,-50) 
-        self.options_slider2.wrtReparentTo(self.options)
-        self.options_rew=DirectFrame(frameSize=(-16, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_rew.setPos(-185, 0, 50)
-        self.options_rew.bind(DGG.B1PRESS, self.optionsSet,['rew'])
-        
-        self.options_loop=DirectFrame(frameSize=(-16, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_loop.setPos(-159, 0, 50)
-        self.options_loop.bind(DGG.B1PRESS, self.optionsSet,['loop'])
-        
-        self.options_play=DirectFrame(frameSize=(-16, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_play.setPos(-140, 0, 50)
-        self.options_play.bind(DGG.B1PRESS, self.optionsSet,['play'])
-        
-        self.options_shuffle=DirectFrame(frameSize=(-16, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_shuffle.setPos(-115, 0, 50)
-        self.options_shuffle.bind(DGG.B1PRESS, self.optionsSet,['shufle'])
-        
-        self.options_ff=DirectFrame(frameSize=(-16, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_ff.setPos(-92, 0, 50)
-        self.options_ff.bind(DGG.B1PRESS, self.optionsSet,['ff'])
-        
-        self.options_autocam=DirectFrame(frameSize=(-70, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_autocam.setPos(-10, 0, 50)
-        self.options_autocam.bind(DGG.B1PRESS, self.optionsSet,['autocam'])
-        
-        #self.options.setPos(winX,0,-128) 
-        self.optionsSet("close")
-        
-        
-        self.healthFrame.setPos(256+winX/2,0,-winY)
-        self.healthBar.setPos(71-256+winX/2,0,7-winY)
-        
-        
-        self.isLightning=False
-        
-        #collisions
-        #self.traverser=CollisionTraverser("playerTrav")
-        #self.traverser.setRespectPrevTransform(True)
-        #self.traverser.showCollisions(render)
-        #self.queue = CollisionHandlerQueue() 
-        
-        #collision ray for testing visibility polygons
-        self.coll_ray=self.node.attachNewNode(CollisionNode('collRay'))        
-        self.coll_ray.node().addSolid(CollisionRay(0, 0, 2, 0,0,-180))
-        self.coll_ray.setTag("visibility", "0") 
-        self.coll_ray.node().setIntoCollideMask(BitMask32.allOff()) 
-        self.coll_ray.node().setFromCollideMask(BitMask32.bit(1))  
-        #self.traverser.addCollider(coll, self.queue)  
-        self.common['traverser'].addCollider(self.coll_ray, self.common['queue'])
-        
-        #collision sphere
-        self.mask_2_3=BitMask32.bit(3)
-        self.mask_2_3.setBit(2)
-        self.coll_sphere=self.node.attachNewNode(CollisionNode('playerSphere'))
-        self.coll_sphere.node().addSolid(CollisionSphere(0, 0, 1, 0.5))   
-        self.coll_sphere.setTag("player", "1") 
-        self.coll_sphere.node().setIntoCollideMask(BitMask32.bit(2))
-        self.coll_sphere.node().setFromCollideMask(self.mask_2_3)
-        #self.traverser.addCollider(self.coll_sphere, self.queue)        
-        #coll_sphere.show()
-        self.common['traverser'].addCollider(self.coll_sphere, self.common['queue'])
         
         
         #lightning ray
@@ -1432,119 +1058,10 @@ class PC2(DirectObject):
         self.common['traverser'].addCollider(self.plasma_coll, self.common['queue'])
         self.lastPower=0
         self.hitSelf=False
-        
-        self.accept( 'window-event', self.windowEventHandler) 
-        self.accept("escape",self.optionsSet, ['close'])
-        #self.accept("f11",self.destroy)
-        
-        taskMgr.add(self.__getMousePos, "mousePosTask")
-        taskMgr.add(self.update, "updatePC")                
+              
         taskMgr.doMethodLater(0.05, self.lightning_task,'lightning_task')
         taskMgr.doMethodLater(0.05, self.plasma_task,'plasma_task')
-    def optionsSet(self, opt, event=None):
-        if opt!="close" and opt!="audio" and opt!="music":
-            self.common['click'].play()
-        #print opt
-        if opt=="close":            
-            wp = base.win.getProperties()
-            winX = wp.getXSize()
-            if self.isOptionsOpen:
-                Sequence(LerpPosInterval(self.options, 0.1, VBase3(winX,0,-128+84)),LerpPosInterval(self.options, 0.2, VBase3(210+winX,0,-128+84))).start()
-                #self.options.setPos(210+winX,0,-128+84) 
-                #self.options_close['frameColor']=(1,1,1,0)
-                self.isOptionsOpen=False
-                #self.pauseCamera=False
-                self.options_exit.hide()
-                self.options_slider1.hide()
-                self.options_slider2.hide()
-                self.options_rew.hide()
-                self.options_loop.hide()
-                self.options_play.hide()
-                self.options_shuffle.hide()
-                self.options_ff.hide()
-                self.options_autocam.hide()
-            else:
-                Sequence(LerpPosInterval(self.options, 0.2, VBase3(winX,0,-128+84)),LerpPosInterval(self.options, 0.1, VBase3(winX,0,-128))).start()
-                #LerpPosInterval(self.options, 0.3, VBase3(winX,0,-128)).start()
-                #self.options.setPos(winX,0,-128)
-                #self.options_close['frameColor']=(1,1,1,1)
-                self.isOptionsOpen=True
-                #self.pauseCamera=True
-                self.options_exit.show()
-                self.options_slider1.show()
-                self.options_slider2.show()
-                self.options_rew.show()
-                self.options_loop.show()
-                self.options_play.show()
-                self.options_shuffle.show()
-                self.options_ff.show()
-                self.options_autocam.show()
-        elif opt=="exit":
-            self.destroy()
-        elif opt=="audio":            
-             base.sfxManagerList[0].setVolume(self.options_slider1['value']*0.01)
-        elif opt=="music":
-            self.common['music'].setVolume(self.options_slider2['value'])
-            #base.musicManager.setVolume(self.options_slider2['value']*0.01)
-        elif opt=="rew":
-            self.common['music'].REW()
-        elif opt=="loop":
-            self.common['music'].setLoop(True)
-        elif opt=="play":
-            self.common['music'].setLoop(False)
-        elif opt=="shufle":
-            self.common['music'].setShuffle()
-        elif opt=="ff":
-            self.common['music'].FF()
-        elif opt=="autocam":
-            if self.autoCamera:
-                self.autoCamera=False
-            else:
-                self.autoCamera=True
-                
-    def heal(self):
-        self.sounds["heal"].play()
-        vfx(self.node, texture='vfx/vfx3.png', scale=.8, Z=1.0, depthTest=False, depthWrite=False).start(0.03)                         
-        self.healthBar.setScale(10,1, 1)        
-        self.healthBar['frameColor']=(0, 1, 0, 1)
-        self.HP=100.0
-        
-    def zoom(self, t):
-        Z=base.camera.getY(self.cameraNode)
-        #print Z
-        if Z>=-5 and t>0:
-            t=0 
-        elif Z<=-16 and t<0:
-            t=0         
-        base.camera.setY(base.camera, t)        
-        base.camera.setZ(base.camera, -t/2.5)
-        base.camera.setP(base.camera, t*2.0)
-    
-    def hit(self, damage):
-        #print "hit"
-        self.sounds[random.choice(["pain1", "pain2"])].play()
-        vfx(self.node, texture='vfx/blood_red.png', scale=.3, Z=1.0, depthTest=True, depthWrite=True).start(0.016)                         
-            
-        #damage=round(damage,0)    
-        self.HP-=damage*2        
-        if self.HP<=0:
-            if(self.actor.getCurrentAnim()!="die"):
-                self.actor.play("die") 
-                self.sounds["walk"].stop()
-                self.coll_sphere.node().setFromCollideMask(BitMask32.allOff())
-                self.coll_sphere.node().setIntoCollideMask(BitMask32.allOff())
-            self.HP=0
-        else:
-            if(self.actor.getCurrentAnim()!="hit"):
-                self.actor.play("hit")   
-        self.healthBar.setScale(self.HP/10.0,1, 1)
-        green=self.HP/100.0
-        self.healthBar['frameColor']=(1-green, green, 0, 1)
-        self.sounds["walk"].stop()            
-        #self.keyMap["w"]=False
-        #self.keyMap["s"]=False
-        #self.keyMap["a"]=False
-        #self.keyMap["d"]=False
+
     
     def spark_dmg(self, power, distance):
         pow=(8.0*self.power_progress+power*(1.0-self.power_progress))/2.0
@@ -1608,16 +1125,7 @@ class PC2(DirectObject):
             Sequence(Wait(0.6), Func(self.end_boom)).start()  
         
     def arm_plasma(self):
-        self.plasma_coll.node().setFromCollideMask(self.mask_2_3)  
-    
-    def resetPointer(self, point3D):
-        p3 = base.cam.getRelativePoint(render, point3D)
-        p2 = Point2()
-        newPos=(0,0,0)
-        if base.camLens.project(p3, p2):
-            r2d = Point3(p2[0], 0, p2[1])
-            newPos = pixel2d.getRelativePoint(render2d, r2d)                            
-            base.win.movePointer(0,int(newPos[0]),-int(newPos[2]))
+        self.plasma_coll.node().setFromCollideMask(self.mask_2_3)
     
     def plasma_task(self, task):
         if self.HP<=0:
@@ -1741,10 +1249,7 @@ class PC2(DirectObject):
                 self.cursorPowerUV2[1]+=0.25           
             self.cursorPower2.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV2[0], self.cursorPowerUV2[1])               
         return task.again
-        
-    def zoom_control(self, amount):
-        LerpFunc(self.zoom,fromData=0,toData=amount, duration=.5, blendType='easeOut').start()
-        
+     
     def update(self, task):
         dt = globalClock.getDt()
         self.cameraNode.setPos(self.node.getPos(render))   
@@ -1881,109 +1386,13 @@ class PC2(DirectObject):
             if(self.actor.getCurrentAnim()!="idle"):
                 self.actor.loop("idle")  
                 
-        return task.cont        
-        
-    def __getMousePos(self, task):
-        if base.mouseWatcherNode.hasMouse():
-            mpos = base.mouseWatcherNode.getMouse()
-            pos3d = Point3()
-            nearPoint = Point3()
-            farPoint = Point3()
-            base.camLens.extrude(mpos, nearPoint, farPoint)          
-            if self.plane.intersectsLine(pos3d, render.getRelativePoint(camera, nearPoint),render.getRelativePoint(camera, farPoint)):            
-                self.lastPos3d=pos3d
-                #if self.camera_momentum==0:
-                if self.HP>0:            
-                    self.node.headsUp(pos3d) 
-                if self.plasmaLock and self.projectile.vfx:# and not self.isBoom:                    
-                    self.pLightNode.setPos(self.projectile.vfx.getPos(render))
-                    self.pLightNode.setZ(2)                    
-                elif self.powerUp>0:    
-                    self.pLightNode.setPos(self.hand.getPos(render))
-                    self.pLightNode.setZ(2.7)                     
-                else:                    
-                    self.pLightNode.setPos(pos3d)
-                    self.pLightNode.setZ(2.7) 
-                self.target_node.setPos(pos3d)                
-                self.target_node.setZ(0.05)
-                if not self.common['safemode']:
-                    if self.node.getDistance(self.pLightNode)<13.0: 
-                        self.common['shadowNode'].setPos(self.pLightNode.getPos(render))
-                        self.common['shadowNode'].setZ(2.7)
-                    #self.shadowNode.setPos(self.pLightNode.getPos(render))
-                    #self.shadowNode.setZ(2.7)                    
-            pos2d=Point3(base.mouseWatcherNode.getMouseX() ,0, base.mouseWatcherNode.getMouseY())
-            self.cursor.setPos(pixel2d.getRelativePoint(render2d, pos2d))               
-        return task.again        
-        
-    def windowEventHandler( self, window=None ):    
-        if window is not None: # window is none if panda3d is not started
-            wp = base.win.getProperties()
-            winX = wp.getXSize()
-            winY = wp.getYSize()    
-            self.healthFrame.setPos(256+winX/2,0,-winY)
-            self.healthBar.setPos(71-256+winX/2,0,7-winY) 
-            if self.isOptionsOpen:
-                self.options.setPos(winX,0,-128) 
-            else:
-                self.options.setPos(210+winX,0,-128+84) 
+        return task.cont
                 
     def destroy(self): 
-        self.common['levelLoader'].unload(True)       
-        self.lightning_vfx.removeNode()
-        
-        if taskMgr.hasTaskNamed("mousePosTask"):
-            taskMgr.remove("mousePosTask")
-        if taskMgr.hasTaskNamed("updatePC"):
-            taskMgr.remove("updatePC")
         if taskMgr.hasTaskNamed("lightning_task"):
             taskMgr.remove("lightning_task")
         if taskMgr.hasTaskNamed("plasma_task"):
             taskMgr.remove("plasma_task")            
-        self.healthFrame.destroy()
-        self.healthBar.destroy()
-        self.cursor.destroy()
-        self.cursorPower.destroy()
-        self.cursorPower2.destroy()
-        self.options.destroy()
-        self.options_close.destroy()
-        self.options_exit.destroy()
-        self.options_slider1.destroy()
-        self.options_slider2.destroy()
-        
-        self.actor.cleanup() 
-        render.setLightOff()
-        self.ignoreAll()
-
-        self.actor.removeNode()
-        #self.floor.setShaderOff()
-        #self.walls.setShaderOff()
-        #self.black.setShaderOff()
-        self.pLightNode.removeNode()
-        self.Ambient.removeNode()
-        #self.walls.clearProjectTexture()
-        #self.black.clearProjectTexture()
-
-        self.cameraNode.removeNode()
-        base.camera.reparentTo(render)
-
-        #self.plane.removeNode()
-
-        self.keyMap = None
-
-        self.lastPos=None
-        self.camera_momentum=None
-        self.powerUp=None
-        self.lightningOn=None
-        self.actionLock=None
-        self.hitMonsters=None
-        self.myWaypoints=None
-        self.HP=None
-        self.blockPower=None 
-        self.cursorPowerUV=None
-        self.cursorPowerUV2=None
-        self.isLightning=None
-
         self.common['traverser'].removeCollider(self.coll_ray)
         self.common['traverser'].removeCollider(self.coll_sphere)
         self.common['traverser'].removeCollider(self.attack_ray)
@@ -1992,79 +1401,12 @@ class PC2(DirectObject):
         self.coll_ray.removeNode()
         self.coll_sphere.removeNode()
         self.attack_ray.removeNode()        
-        self.node.setPos(0,0,0)
-        self.common['plasma_coll']=self.plasma_coll
-        self.common['player_node']=self.node
-        self.common['CharGen'].load()
+        super().destroy()
             
-class PC3(DirectObject):
-    def onLevelLoad(self, common):
-        self.node.setPos(0,0,0)
-        self.black=common['map_black']
-        self.walls=common['map_walls']
-        self.floor=common['map_floor']
-        #print self.black, self.walls, self.floor
-        self.monster_list=common['monsterList']
-        if not self.common['safemode']:
-            wall_shader=loader.loadShader('tiles.sha')
-            black_shader=loader.loadShader('black_parts.sha')
-            floor_shader=loader.loadShader('floor.sha')
-            self.floor.setShader(floor_shader)
-            self.walls.setShader(wall_shader)
-            self.black.setShader(black_shader)            
-            self.floor.hide(BitMask32.bit(1)) 
-        #shaders
-        if not self.common['safemode']:    
-            render.setShaderInput("slight0", self.Ambient)        
-            render.setShaderInput("plight0", self.pLightNode)
-            
-            tex = loader.loadTexture('fog2.png')
-            self.proj = render.attachNewNode(LensNode('proj'))
-            #lens = OrthographicLens()        
-            #lens.setFilmSize(3, 3)  
-            lens=PerspectiveLens()        
-            lens.setFov(45)
-            self.proj.node().setLens(lens)
-            #self.proj.node().showFrustum() 
-            self.proj.reparentTo(render)
-            self.proj.setHpr(180, 45, 0)
-            self.proj.setZ(0.0)
-            self.proj.reparentTo(self.cameraNode)
-            ts = TextureStage('ts')
-            tex.setWrapU(Texture.WMBorderColor  )
-            tex.setWrapV(Texture.WMBorderColor  )
-            tex.setBorderColor(Vec4(1,1,1,1))  
-            self.black.projectTexture(ts, tex, self.proj)        
-            self.walls.projectTexture(ts, tex, self.proj)       
-        
-            #shadows    
-            self.floor.projectTexture(self.common['shadow_ts'] , self.common['shadowTexture'], self.common['shadowCamera'])  
-            #base.bufferViewer.toggleEnable()
-            #base.bufferViewer.setPosition("ulcorner")
-            #base.bufferViewer.setCardSize(.5, 0.0)     
+class PC3(Player):
+ 
     def __init__(self, common):
-        self.common=common    
-        self.black=common['map_black']
-        self.walls=common['map_walls']
-        self.floor=common['map_floor']
-        self.monster_list=common['monsterList']
-        self.audio3d=common['audio3d']
-        
-        if not self.common['safemode']:
-            wall_shader=loader.loadShader('tiles.sha')
-            black_shader=loader.loadShader('black_parts.sha')
-            floor_shader=loader.loadShader('floor.sha')
-            self.floor.setShader(floor_shader)
-            self.walls.setShader(wall_shader)
-            self.black.setShader(black_shader)
-            
-            self.floor.hide(BitMask32.bit(1))
-        
-        #parent node
-        if 'player_node' in common:
-            self.node=common['player_node']
-        else:
-            self.node=render.attachNewNode("pc")        
+        super().__init__(common)
         #actor
         if self.common['nude']:
             self.actor=Actor("models/pc/female2_nude", {"arm":"models/pc/female2_arm",
@@ -2095,166 +1437,23 @@ class PC3(DirectObject):
         self.actor.setH(180.0)       
         self.actor.setBin("opaque", 10)        
         #self.actor.setTransparency(TransparencyAttrib.MMultisample)
-        self.isIdle=True
-        
-        #sounds                
-        self.sounds={'walk':self.audio3d.loadSfx("sfx/walk_new.ogg"), 
-                     'door_open':self.audio3d.loadSfx("sfx/door_open2.ogg"),
-                     'door_locked':self.audio3d.loadSfx("sfx/door_locked.ogg"), 
-                     'key':self.audio3d.loadSfx("sfx/key_pickup.ogg"),                  
-                     'pain1':self.audio3d.loadSfx("sfx/fem_pain1.ogg"),
-                     'pain2':self.audio3d.loadSfx("sfx/fem_pain2.ogg"),
-                     'heal':self.audio3d.loadSfx("sfx/heal3.ogg"),
-                     'fire':self.audio3d.loadSfx("sfx/fire_arrow3.ogg"),
-                     'arm':self.audio3d.loadSfx("sfx/draw_bow3.ogg"),
-                     'run':self.audio3d.loadSfx("sfx/run3.ogg"),
-                    }
+
+        self.sounds['pain1']=self.audio3d.loadSfx("sfx/fem_pain1.ogg")
+        self.sounds['pain2']=self.audio3d.loadSfx("sfx/fem_pain2.ogg")
+        self.sounds['fire']=self.audio3d.loadSfx("sfx/fire_arrow3.ogg")                    
+        self.sounds['arm']=self.audio3d.loadSfx("sfx/draw_bow3.ogg")
+        self.sounds['run']=self.audio3d.loadSfx("sfx/run3.ogg")
+
         self.sounds['walk'].setLoop(True)       
         self.sounds['run'].setLoop(True) 
         for sound in self.sounds:
             self.audio3d.attachSoundToObject(self.sounds[sound], self.node)
         
-        
-        #camera
-        self.cameraNode  = render.attachNewNode("cameraNode")         
-        self.cameraNode.setZ(-1)
-        base.camera.setPos(0, -14, 13)
-        #base.camera.setY(-12)
-        #base.camera.setZ(12)
-        base.camera.lookAt(self.node)
-        base.camera.wrtReparentTo(self.cameraNode)  
-        self.pointer=self.cameraNode.attachNewNode("pointerNode")         
-        self.autoCamera=True
-        self.pauseCamera=False
-        #self.zonk=render.attachNewNode("zonk")         
-        #self.zonk.setPos(-12,0,0)
-        
-        #light
-        self.pLight = PointLight('plight')
-        #self.pLight.setColor(VBase4(.7, .7, .8, 1))
-        self.pLight.setColor(VBase4(.9, .9, 1.0, 1))
-        #self.pLight.setAttenuation(Point3(3, 0, 0)) 
-        self.pLight.setAttenuation(Point3(2, 0, 0.5))         
-        self.pLightNode = render.attachNewNode(self.pLight) 
-        #self.pLightNode.setZ(3.0)
-        render.setLight(self.pLightNode)
-        
-        self.sLight=Spotlight('sLight')        
-        #self.sLight.setColor(VBase4(.4, .35, .35, 1))
-        self.sLight.setColor(VBase4(.5, .45, .45, 1))
-        if self.common['extra_ambient']:
-            self.sLight.setColor(VBase4(.7, .6, .6, 1))
-            #print "extra ambient"
-        spot_lens = PerspectiveLens()
-        spot_lens.setFov(160)
-        self.sLight.setLens(spot_lens)
-        self.Ambient = self.cameraNode.attachNewNode( self.sLight)
-        self.Ambient.setPos(base.camera.getPos(render))
-        self.Ambient.lookAt(self.node)
-        render.setLight(self.Ambient)
-        
-        
-            
-        
-        #shaders
-        if not self.common['safemode']:    
-            render.setShaderInput("slight0", self.Ambient)        
-            render.setShaderInput("plight0", self.pLightNode)
-            
-            tex = loader.loadTexture('fog2.png')
-            self.proj = render.attachNewNode(LensNode('proj'))
-            #lens = OrthographicLens()        
-            #lens.setFilmSize(3, 3)  
-            lens=PerspectiveLens()        
-            lens.setFov(45)
-            self.proj.node().setLens(lens)
-            #self.proj.node().showFrustum() 
-            self.proj.reparentTo(render)
-            self.proj.setHpr(180, 45, 0)
-            self.proj.setZ(0.0)
-            self.proj.reparentTo(self.cameraNode)
-            ts = TextureStage('ts')
-            tex.setWrapU(Texture.WMBorderColor  )
-            tex.setWrapV(Texture.WMBorderColor  )
-            tex.setBorderColor(Vec4(1,1,1,1))  
-            self.black.projectTexture(ts, tex, self.proj)        
-            self.walls.projectTexture(ts, tex, self.proj)
-        
-        
-            #shadows    
-            self.floor.projectTexture(self.common['shadow_ts'] , self.common['shadowTexture'], self.common['shadowCamera'])  
-            #base.bufferViewer.toggleEnable()
-            #base.bufferViewer.setPosition("ulcorner")
-            #base.bufferViewer.setCardSize(.5, 0.0) 
-        
-        #the plane will by used to see where the mouse pointer is
-        self.plane = Plane(Vec3(0, 0, 1), Point3(0, 0, 1))        
-       
-        #key mapping
-        self.keyMap = {'key_forward': False,
-                        'key_back': False,
-                        'key_left': False,
-                        'key_right': False,
-                        'key_cam_left': False,
-                        'key_cam_right': False,
-                        'key_action1': False,
-                        'key_action2': False}
-        #prime key
-        self.accept(common['keymap']['key_forward'][0], self.keyMap.__setitem__, ["key_forward", True])
-        self.accept(common['keymap']['key_back'][0], self.keyMap.__setitem__, ["key_back", True])
-        self.accept(common['keymap']['key_left'][0], self.keyMap.__setitem__, ["key_left", True])
-        self.accept(common['keymap']['key_right'][0], self.keyMap.__setitem__, ["key_right", True])
-        self.accept(common['keymap']['key_cam_left'][0], self.keyMap.__setitem__, ["key_cam_left", True])
-        self.accept(common['keymap']['key_cam_right'][0], self.keyMap.__setitem__, ["key_cam_right", True])
-        self.accept(common['keymap']['key_action1'][0], self.keyMap.__setitem__, ["key_action1", True])
-        self.accept(common['keymap']['key_action2'][0], self.keyMap.__setitem__, ["key_action2", True])
-        #alt key
-        self.accept(common['keymap']['key_forward'][1], self.keyMap.__setitem__, ["key_forward", True])
-        self.accept(common['keymap']['key_back'][1], self.keyMap.__setitem__, ["key_back", True])
-        self.accept(common['keymap']['key_left'][1], self.keyMap.__setitem__, ["key_left", True])
-        self.accept(common['keymap']['key_right'][1], self.keyMap.__setitem__, ["key_right", True])
-        self.accept(common['keymap']['key_cam_left'][1], self.keyMap.__setitem__, ["key_cam_left", True])
-        self.accept(common['keymap']['key_cam_right'][1], self.keyMap.__setitem__, ["key_cam_right", True])
-        self.accept(common['keymap']['key_action1'][1], self.keyMap.__setitem__, ["key_action1", True])
-        self.accept(common['keymap']['key_action2'][1], self.keyMap.__setitem__, ["key_action2", True])
-        self.accept(common['keymap']['key_forward'][0], self.keyMap.__setitem__, ["key_forward", True])
-        #prime key up
-        self.accept(common['keymap']['key_forward'][0]+"-up", self.keyMap.__setitem__, ["key_forward", False])
-        self.accept(common['keymap']['key_back'][0]+"-up", self.keyMap.__setitem__, ["key_back", False])
-        self.accept(common['keymap']['key_left'][0]+"-up", self.keyMap.__setitem__, ["key_left", False])
-        self.accept(common['keymap']['key_right'][0]+"-up", self.keyMap.__setitem__, ["key_right", False])
-        self.accept(common['keymap']['key_cam_left'][0]+"-up", self.keyMap.__setitem__, ["key_cam_left", False])
-        self.accept(common['keymap']['key_cam_right'][0]+"-up", self.keyMap.__setitem__, ["key_cam_right", False])
-        self.accept(common['keymap']['key_action1'][0]+"-up", self.keyMap.__setitem__, ["key_action1", False])
-        self.accept(common['keymap']['key_action2'][0]+"-up", self.keyMap.__setitem__, ["key_action2", False])
-        #alt key up
-        self.accept(common['keymap']['key_forward'][1]+"-up", self.keyMap.__setitem__, ["key_forward", False])
-        self.accept(common['keymap']['key_back'][1]+"-up", self.keyMap.__setitem__, ["key_back", False])
-        self.accept(common['keymap']['key_left'][1]+"-up", self.keyMap.__setitem__, ["key_left", False])
-        self.accept(common['keymap']['key_right'][1]+"-up", self.keyMap.__setitem__, ["key_right", False])
-        self.accept(common['keymap']['key_cam_left'][1]+"-up", self.keyMap.__setitem__, ["key_cam_left", False])
-        self.accept(common['keymap']['key_cam_right'][1]+"-up", self.keyMap.__setitem__, ["key_cam_right", False])
-        self.accept(common['keymap']['key_action1'][1]+"-up", self.keyMap.__setitem__, ["key_action1", False])
-        self.accept(common['keymap']['key_action2'][1]+"-up", self.keyMap.__setitem__, ["key_action2", False])
-        self.accept(common['keymap']['key_forward'][0]+"-up", self.keyMap.__setitem__, ["key_forward", False])
-        
-        #camera zoom
-        self.accept(common['keymap']['key_zoomin'][0], self.zoom_control,[0.1])
-        self.accept(common['keymap']['key_zoomout'][0],self.zoom_control,[-0.1])
-        self.accept(common['keymap']['key_zoomin'][1], self.zoom_control,[0.1])
-        self.accept(common['keymap']['key_zoomout'][1],self.zoom_control,[-0.1])
-        
-        #game data       
-        self.lastPos=self.node.getPos(render)
-        self.camera_momentum=1.0
-        self.powerUp=0
-        self.runUp=0
-        self.actionLock=0
-        self.hitMonsters=set()
-        self.myWaypoints=[]
+
         self.HP=70.0
         self.MaxHP=70.0
-        
+        self.runUp=0
+        self.powerUp=0
         self.barbChance=int(self.common['pc_stat1']/2)    #x 100%        
         self.pierceChance=int((100-self.common['pc_stat1'])/2)#x 100%
         #print self.pierceChance
@@ -2278,188 +1477,9 @@ class PC3(DirectObject):
         self.crit_hit=(5+(101-self.common['pc_stat3'])/2)/100.0
         self.crit_dmg=5+(101-self.common['pc_stat3'])/5
         
-        #gui
-        wp = base.win.getProperties()
-        winX = wp.getXSize()
-        winY = wp.getYSize()
-        self.cursor=DirectFrame(frameSize=(-32, 0, 0, 32),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/cursor1.png',
-                                    parent=pixel2d)        
-        self.cursor.setPos(32,0, -32)
-        self.cursor.flattenLight()
-        self.cursor.setBin('fixed', 10)
-        self.cursor.setTransparency(TransparencyAttrib.MDual)
-        
-        self.cursorPowerUV=[0.0, 0.75]
-        self.cursorPower=DirectFrame(frameSize=(-64, 0, 0, 64),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/arc_grow2.png',
-                                    parent=self.cursor)
-        #self.cursorPower.setR(-45)
-        self.cursorPower.setPos(48,0, -48)
-        self.cursorPower.stateNodePath[0].setTexScale(TextureStage.getDefault(), 0.25, 0.25)        
-        self.cursorPower.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV[0], self.cursorPowerUV[1])
-        #self.cursor.setBin('fixed', 11)
-        self.cursorPower2=DirectFrame(frameSize=(-64, 0, 0, 64),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/arc_shrink.png',
-                                    parent=self.cursor)
-        self.cursorPowerUV2=[0.0, 0.75]
-        #self.cursorPower2.setR(135)
-        self.cursorPower2.setPos(48,0,-48)                                            
-        self.cursorPower2.stateNodePath[0].setTexScale(TextureStage.getDefault(), 0.25, 0.25)        
-        self.cursorPower2.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV2[0], self.cursorPowerUV2[1])
-        
-        self.healthFrame=DirectFrame(frameSize=(-512, 0, 0, 64),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/health_frame2.png',
-                                    parent=pixel2d)
-        self.healthFrame.setTransparency(TransparencyAttrib.MDual)
-        #self.healthFrame.setPos(512+200,0,-600)
-        
-        self.healthBar=DirectFrame(frameSize=(37, 0, 0, 16),
-                                    frameColor=(0, 1, 0, 1),
-                                    frameTexture='icon/glass4.png',
-                                    parent=pixel2d)
-        self.healthBar.setTransparency(TransparencyAttrib.MDual)
-        #self.healthBar.setPos(71+200,0,3-600)
-        self.healthBar.setScale(10,1, 1)
-        self.isOptionsOpen=True
-        self.options=DirectFrame(frameSize=(-256, 0, 0, 128),
-                                    frameColor=(1,1,1,1),
-                                    frameTexture='icon/options.png',
-                                    parent=pixel2d)
-        self.options.setTransparency(TransparencyAttrib.MDual)
-        #self.options.setPos(210+winX,0,-128+84) 
-        self.options.setPos(winX,0,-128) 
-        self.options.setBin('fixed', 1)
-        self.options_close=DirectFrame(frameSize=(-32, 0, 0, 32),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_close.setPos(-221, 0, 5)
-        self.options_close.bind(DGG.B1PRESS, self.optionsSet,['close']) 
-        self.options_exit=DirectFrame(frameSize=(-200, 0, 0, 40),
-                                    frameColor=(1,1,1,0), 
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_exit.bind(DGG.B1PRESS, self.optionsSet,['exit'])                                    
-        self.options_slider1 = DirectSlider(range=(0,100),
-                                    value=self.common['soundVolume'],
-                                    pageSize=10,      
-                                    thumb_relief=DGG.FLAT,
-                                    thumb_frameTexture='glass3.png',
-                                    scale=70,
-                                    thumb_frameSize=(0.07, -0.07, -0.11, 0.11),
-                                    frameTexture='glass2.png',                                    
-                                    command=self.optionsSet,
-                                    extraArgs=["audio"],
-                                    parent=pixel2d) 
-        self.options_slider1.setBin('fixed', 2)                                         
-        self.options_slider1.setPos(-95+winX,0,-24) 
-        self.options_slider1.wrtReparentTo(self.options)
-        
-        self.options_slider2 = DirectSlider(range=(0,100),
-                                    value= self.common['musicVolume'],
-                                    pageSize=10,      
-                                    thumb_relief=DGG.FLAT,
-                                    thumb_frameTexture='glass3.png',
-                                    scale=70,
-                                    thumb_frameSize=(0.07, -0.07, -0.11, 0.11),
-                                    frameTexture='glass2.png',                                    
-                                    command=self.optionsSet,
-                                    extraArgs=["music"],
-                                    parent=pixel2d) 
-        self.options_slider2.setBin('fixed', 2)                                         
-        self.options_slider2.setPos(-95+winX,0,-50) 
-        self.options_slider2.wrtReparentTo(self.options)
-        
-        self.options_rew=DirectFrame(frameSize=(-16, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_rew.setPos(-185, 0, 50)
-        self.options_rew.bind(DGG.B1PRESS, self.optionsSet,['rew'])
-        
-        self.options_loop=DirectFrame(frameSize=(-16, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_loop.setPos(-159, 0, 50)
-        self.options_loop.bind(DGG.B1PRESS, self.optionsSet,['loop'])
-        
-        self.options_play=DirectFrame(frameSize=(-16, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_play.setPos(-140, 0, 50)
-        self.options_play.bind(DGG.B1PRESS, self.optionsSet,['play'])
-        
-        self.options_shuffle=DirectFrame(frameSize=(-16, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_shuffle.setPos(-115, 0, 50)
-        self.options_shuffle.bind(DGG.B1PRESS, self.optionsSet,['shufle'])
-        
-        self.options_ff=DirectFrame(frameSize=(-16, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_ff.setPos(-92, 0, 50)
-        self.options_ff.bind(DGG.B1PRESS, self.optionsSet,['ff'])
-        
-        self.options_autocam=DirectFrame(frameSize=(-70, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_autocam.setPos(-10, 0, 50)
-        self.options_autocam.bind(DGG.B1PRESS, self.optionsSet,['autocam'])
-        
-        #self.options.setPos(winX,0,-128) 
-        self.optionsSet("close")
-        
-        
-        
-        self.healthFrame.setPos(256+winX/2,0,-winY)
-        self.healthBar.setPos(71-256+winX/2,0,7-winY)
-        
         self.isRunning=False
         
         #collisions
-        #self.traverser=CollisionTraverser("playerTrav")
-        #self.traverser.setRespectPrevTransform(True)
-        #self.traverser.showCollisions(render)
-        #self.queue = CollisionHandlerQueue() 
-        
-        #collision ray for testing visibility polygons
-        self.coll_ray=self.node.attachNewNode(CollisionNode('collRay'))        
-        self.coll_ray.node().addSolid(CollisionRay(0, 0, 2, 0,0,-180))
-        self.coll_ray.setTag("visibility", "0") 
-        self.coll_ray.node().setIntoCollideMask(BitMask32.allOff()) 
-        self.coll_ray.node().setFromCollideMask(BitMask32.bit(1))  
-        #self.traverser.addCollider(self.coll_ray, self.queue)  
-        self.common['traverser'].addCollider(self.coll_ray, self.common['queue'])
-        
-        #collision sphere
-        self.mask_2_3=BitMask32.bit(3)
-        self.mask_2_3.setBit(2)
-        self.coll_sphere=self.node.attachNewNode(CollisionNode('playerSphere'))
-        self.coll_sphere.node().addSolid(CollisionSphere(0, 0, 1, 0.4))   
-        self.coll_sphere.setTag("player", "1") 
-        self.coll_sphere.node().setIntoCollideMask(BitMask32.bit(2))
-        self.coll_sphere.node().setFromCollideMask(self.mask_2_3)
-        #self.traverser.addCollider(self.coll_sphere, self.queue)
-        self.common['traverser'].addCollider(self.coll_sphere, self.common['queue'])
-        #coll_sphere.show()
         
         self.arrowSpheres=[]
         self.freeArrowSpheres=[]
@@ -2472,122 +1492,10 @@ class PC3(DirectObject):
             #self.arrowSpheres[-1].show()
             self.freeArrowSpheres.append(i)
             self.common['traverser'].addCollider(self.arrowSpheres[-1], self.common['queue'])
-        
-        
-        self.accept( 'window-event', self.windowEventHandler) 
-        self.accept("escape",self.optionsSet, ['close'])
-        
-        taskMgr.add(self.__getMousePos, "mousePosTask")
-        taskMgr.add(self.update, "updatePC")              
+            
         taskMgr.doMethodLater(0.05, self.run_task,'run_task')
         taskMgr.doMethodLater(0.05, self.bow_task,'bow_task')        
-        
-    def optionsSet(self, opt, event=None):
-        if opt!="close" and opt!="audio" and opt!="music":
-            self.common['click'].play()
-        #print opt
-        if opt=="close":            
-            wp = base.win.getProperties()
-            winX = wp.getXSize()
-            if self.isOptionsOpen:
-                Sequence(LerpPosInterval(self.options, 0.1, VBase3(winX,0,-128+84)),LerpPosInterval(self.options, 0.2, VBase3(210+winX,0,-128+84))).start()
-                #self.options.setPos(210+winX,0,-128+84) 
-                #self.options_close['frameColor']=(1,1,1,0)
-                self.isOptionsOpen=False
-                #self.pauseCamera=False
-                self.options_exit.hide()
-                self.options_slider1.hide()
-                self.options_slider2.hide()
-                self.options_rew.hide()
-                self.options_loop.hide()
-                self.options_play.hide()
-                self.options_shuffle.hide()
-                self.options_ff.hide()
-                self.options_autocam.hide()
-            else:
-                Sequence(LerpPosInterval(self.options, 0.2, VBase3(winX,0,-128+84)),LerpPosInterval(self.options, 0.1, VBase3(winX,0,-128))).start()
-                #LerpPosInterval(self.options, 0.3, VBase3(winX,0,-128)).start()
-                #self.options.setPos(winX,0,-128)
-                #self.options_close['frameColor']=(1,1,1,1)
-                self.isOptionsOpen=True
-                #self.pauseCamera=True
-                self.options_exit.show()
-                self.options_slider1.show()
-                self.options_slider2.show()
-                self.options_rew.show()
-                self.options_loop.show()
-                self.options_play.show()
-                self.options_shuffle.show()
-                self.options_ff.show()
-                self.options_autocam.show()
-        elif opt=="exit":
-            self.destroy()
-        elif opt=="audio":            
-             base.sfxManagerList[0].setVolume(self.options_slider1['value']*0.01)
-        elif opt=="music":
-            self.common['music'].setVolume(self.options_slider2['value'])
-            #base.musicManager.setVolume(self.options_slider2['value']*0.01)
-        elif opt=="rew":
-            self.common['music'].REW()
-        elif opt=="loop":
-            self.common['music'].setLoop(True)
-        elif opt=="play":
-            self.common['music'].setLoop(False)
-        elif opt=="shufle":
-            self.common['music'].setShuffle()
-        elif opt=="ff":
-            self.common['music'].FF()
-        elif opt=="autocam":
-            if self.autoCamera:
-                self.autoCamera=False
-            else:
-                self.autoCamera=True            
-        
-            
-    def heal(self):
-        self.sounds["heal"].play()
-        vfx(self.node, texture='vfx/vfx3.png', scale=.8, Z=1.0, depthTest=False, depthWrite=False).start(0.03)                         
-        self.healthBar.setScale(10,1, 1)        
-        self.healthBar['frameColor']=(0, 1, 0, 1)
-        self.HP=self.MaxHP
-        
-    def zoom(self, t):
-        Z=base.camera.getY(self.cameraNode)
-        #print Z
-        if Z>=-5 and t>0:
-            t=0 
-        elif Z<=-16 and t<0:
-            t=0         
-        base.camera.setY(base.camera, t)        
-        base.camera.setZ(base.camera, -t/2.5)
-        base.camera.setP(base.camera, t*2.0)
-        
-    def hit(self, damage):
-        self.sounds[random.choice(["pain1", "pain2"])].play()
-        vfx(self.node, texture='vfx/blood_red.png', scale=.3, Z=1.0, depthTest=True, depthWrite=True).start(0.016)                         
-            
-        #damage=round(damage,0)    
-        self.HP-=damage        
-        #print self.HP
-        if self.HP<=0:
-            if(self.actor.getCurrentAnim()!="die"):
-                self.actor.play("die") 
-                self.sounds["walk"].stop()
-                self.coll_sphere.node().setFromCollideMask(BitMask32.allOff())
-                self.coll_sphere.node().setIntoCollideMask(BitMask32.allOff())
-            self.HP=0
-        else:
-            if(self.actor.getCurrentAnim()!="hit"):
-                self.actor.play("hit")   
-        self.healthBar.setScale(10*self.HP/self.MaxHP,1, 1)
-        green=self.HP/self.MaxHP
-        self.healthBar['frameColor']=(1-green, green, 0, 1)
-        self.sounds["walk"].stop()            
-        #self.keyMap["w"]=False
-        #self.keyMap["s"]=False
-        #self.keyMap["a"]=False
-        #self.keyMap["d"]=False
-        
+
     def attack(self, arrow,  monster): 
         if arrow:
             if arrow in monster.arrows:
@@ -2699,15 +1607,6 @@ class PC3(DirectObject):
         self.arrows.append(newArrow)        
         Sequence(Wait(0.5),Func(self.arrow.show)).start()
     
-    def resetPointer(self, point3D):
-        p3 = base.cam.getRelativePoint(render, point3D)
-        p2 = Point2()
-        newPos=(0,0,0)
-        if base.camLens.project(p3, p2):
-            r2d = Point3(p2[0], 0, p2[1])
-            newPos = pixel2d.getRelativePoint(render2d, r2d)                            
-            base.win.movePointer(0,int(newPos[0]),-int(newPos[2]))
-    
     def bow_task(self, task):
         if self.HP<=0:
             return task.done
@@ -2770,10 +1669,7 @@ class PC3(DirectObject):
                 self.cursorPowerUV2[1]+=0.25           
             self.cursorPower2.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV2[0], self.cursorPowerUV2[1])               
         return task.again
-        
-    def zoom_control(self, amount):
-        LerpFunc(self.zoom,fromData=0,toData=amount, duration=.5, blendType='easeOut').start()
-        
+
     def update(self, task):
         dt = globalClock.getDt()
         self.cameraNode.setPos(self.node.getPos(render))  
@@ -2921,97 +1817,13 @@ class PC3(DirectObject):
             if(self.actor.getCurrentAnim()!="idle"):
                 self.actor.loop("idle")  
                 
-        return task.cont        
-        
-    def __getMousePos(self, task):
-        if base.mouseWatcherNode.hasMouse():
-            mpos = base.mouseWatcherNode.getMouse()
-            pos3d = Point3()
-            nearPoint = Point3()
-            farPoint = Point3()
-            base.camLens.extrude(mpos, nearPoint, farPoint)          
-            if self.plane.intersectsLine(pos3d, render.getRelativePoint(camera, nearPoint),render.getRelativePoint(camera, farPoint)):            
-                self.lastPos3d=pos3d
-                #if self.camera_momentum==0:
-                if self.HP>0:            
-                    self.node.headsUp(pos3d) 
-                self.pLightNode.setPos(pos3d)
-                self.pLightNode.setZ(2.7) 
-                if not self.common['safemode']:
-                    if self.node.getDistance(self.pLightNode)<13.0: 
-                        self.common['shadowNode'].setPos(self.pLightNode.getPos(render))
-                        self.common['shadowNode'].setZ(2.7)
-            pos2d=Point3(base.mouseWatcherNode.getMouseX() ,0, base.mouseWatcherNode.getMouseY())
-            self.cursor.setPos(pixel2d.getRelativePoint(render2d, pos2d))               
-        return task.again        
-        
-    def windowEventHandler( self, window=None ):    
-        if window is not None: # window is none if panda3d is not started
-            wp = base.win.getProperties()
-            winX = wp.getXSize()
-            winY = wp.getYSize()    
-            self.healthFrame.setPos(256+winX/2,0,-winY)
-            self.healthBar.setPos(71-256+winX/2,0,7-winY) 
-            if self.isOptionsOpen:
-                self.options.setPos(winX,0,-128) 
-            else:
-                self.options.setPos(210+winX,0,-128+84) 
-                
+        return task.cont              
+ 
     def destroy(self): 
-        self.common['levelLoader'].unload(True)      
-    
-        if taskMgr.hasTaskNamed("mousePosTask"):
-            taskMgr.remove("mousePosTask")
-        if taskMgr.hasTaskNamed("updatePC"):
-            taskMgr.remove("updatePC")
         if taskMgr.hasTaskNamed("run_task"):
             taskMgr.remove("run_task")
         if taskMgr.hasTaskNamed("bow_task"):
-            taskMgr.remove("bow_task")            
-        if taskMgr.hasTaskNamed("regenerate_task"):
-            taskMgr.remove("regenerate_task")     
-        self.healthFrame.destroy()
-        self.healthBar.destroy()
-        self.cursor.destroy()
-        self.cursorPower.destroy()
-        self.cursorPower2.destroy()
-        self.options.destroy()
-        self.options_close.destroy()
-        self.options_exit.destroy()
-        self.options_slider1.destroy()
-        self.options_slider2.destroy()
-        
-        self.actor.cleanup() 
-        render.setLightOff()
-        self.ignoreAll()
-
-        self.actor.removeNode()
-        #self.floor.setShaderOff()
-        #self.walls.setShaderOff()
-        #self.black.setShaderOff()
-        self.pLightNode.removeNode()
-        self.Ambient.removeNode()
-        #self.walls.clearProjectTexture()
-        #self.black.clearProjectTexture()
-
-        self.cameraNode.removeNode()
-        base.camera.reparentTo(render)
-
-        #self.plane.removeNode()
-
-        self.keyMap = None
-
-        self.lastPos=None
-        self.camera_momentum=None
-        self.powerUp=None
-        self.shieldUp=None
-        self.actionLock=None
-        self.hitMonsters=None
-        self.myWaypoints=None
-        self.HP=None
-        self.blockPower=None 
-        self.cursorPowerUV=None
-        self.cursorPowerUV2=None
+            taskMgr.remove("bow_task")
         self.isRunning=None
 
         for sphere in self.arrowSpheres:
@@ -3024,81 +1836,13 @@ class PC3(DirectObject):
 
         self.coll_ray.removeNode()
         self.coll_sphere.removeNode()
+        super().destroy()
         
-        self.node.setPos(0,0,0)
-        self.common['player_node']=self.node
-        self.common['CharGen'].load()            
-        
-class PC4(DirectObject):
-    def onLevelLoad(self, common):
-        self.node.setPos(0,0,0)
-        self.black=common['map_black']
-        self.walls=common['map_walls']
-        self.floor=common['map_floor']
-        #print self.black, self.walls, self.floor
-        self.monster_list=common['monsterList']
-        if not self.common['safemode']:
-            wall_shader=loader.loadShader('tiles.sha')
-            black_shader=loader.loadShader('black_parts.sha')
-            floor_shader=loader.loadShader('floor.sha')
-            self.floor.setShader(floor_shader)
-            self.walls.setShader(wall_shader)
-            self.black.setShader(black_shader)            
-            self.floor.hide(BitMask32.bit(1)) 
-        #shaders
-        if not self.common['safemode']:    
-            render.setShaderInput("slight0", self.Ambient)        
-            render.setShaderInput("plight0", self.pLightNode)
-            
-            tex = loader.loadTexture('fog2.png')
-            self.proj = render.attachNewNode(LensNode('proj'))
-            #lens = OrthographicLens()        
-            #lens.setFilmSize(3, 3)  
-            lens=PerspectiveLens()        
-            lens.setFov(45)
-            self.proj.node().setLens(lens)
-            #self.proj.node().showFrustum() 
-            self.proj.reparentTo(render)
-            self.proj.setHpr(180, 45, 0)
-            self.proj.setZ(0.0)
-            self.proj.reparentTo(self.cameraNode)
-            ts = TextureStage('ts')
-            tex.setWrapU(Texture.WMBorderColor  )
-            tex.setWrapV(Texture.WMBorderColor  )
-            tex.setBorderColor(Vec4(1,1,1,1))  
-            self.black.projectTexture(ts, tex, self.proj)        
-            self.walls.projectTexture(ts, tex, self.proj)       
-        
-            #shadows    
-            self.floor.projectTexture(self.common['shadow_ts'] , self.common['shadowTexture'], self.common['shadowCamera'])  
-            #base.bufferViewer.toggleEnable()
-            #base.bufferViewer.setPosition("ulcorner")
-            #base.bufferViewer.setCardSize(.5, 0.0)     
+class PC4(Player):
+   
     def __init__(self, common):
-        self.common=common    
-        self.black=common['map_black']
-        self.walls=common['map_walls']
-        self.floor=common['map_floor']
-        self.monster_list=common['monsterList']
-        self.audio3d=common['audio3d']
-        
-        if not self.common['safemode']:
-            wall_shader=loader.loadShader('tiles.sha')
-            black_shader=loader.loadShader('black_parts.sha')
-            floor_shader=loader.loadShader('floor.sha')
-            self.floor.setShader(floor_shader)
-            self.walls.setShader(wall_shader)
-            self.black.setShader(black_shader)
-            
-            self.floor.hide(BitMask32.bit(1))
-        
-        #parent node
-        if 'player_node' in common:
-            self.node=common['player_node']
-        else:
-            self.node=render.attachNewNode("pc")  
+        super().__init__(common)
 
-     
         #actor
         self.actor=Actor("models/pc/male2", {"attack":"models/pc/male2_attack",                                            
                                             "walk":"models/pc/male2_walk",
@@ -3114,40 +1858,27 @@ class PC4(DirectObject):
         self.actor.setH(180.0)       
         self.actor.setBin("opaque", 10)        
         #self.actor.setTransparency(TransparencyAttrib.MMultisample)
-        self.isIdle=True
 
         
-        self.magma_node=render.attachNewNode("magma_node")  
+        self.target_node=render.attachNewNode("magma_node")  
         
         
         self.magmaList=[]
         
         #sounds                
-        self.sounds={'walk':self.audio3d.loadSfx("sfx/walk_new3.ogg"),
-                     'door_open':self.audio3d.loadSfx("sfx/door_open2.ogg"),
-                     'door_locked':self.audio3d.loadSfx("sfx/door_locked.ogg"),
-                     'key':self.audio3d.loadSfx("sfx/key_pickup.ogg"),
-                     'heal':self.audio3d.loadSfx("sfx/heal.ogg"),
-                     'hit1':self.audio3d.loadSfx("sfx/hit1.ogg"),
-                     'hit2':self.audio3d.loadSfx("sfx/hit2.ogg"),
-                     'swing1':self.audio3d.loadSfx("sfx/swing1.ogg"),
-                     'swing2':self.audio3d.loadSfx("sfx/swing2.ogg"),
-                     'swing3':self.audio3d.loadSfx("sfx/swing3.ogg"),
-                     'pain1':self.audio3d.loadSfx("sfx/pain1.ogg"),
-                     'pain2':self.audio3d.loadSfx("sfx/pain2.ogg"),
-                     'teleport':self.audio3d.loadSfx("sfx/teleport.ogg"),
-                     'teleport_fail':self.audio3d.loadSfx("sfx/teleport_fail.ogg"),
-                     'block2':self.audio3d.loadSfx("sfx/block2.ogg"),
-                     'flame':self.audio3d.loadSfx("sfx/flame2.ogg"),
-                     'spell':self.audio3d.loadSfx("sfx/burn2.ogg"),
-                     'heal':self.audio3d.loadSfx("sfx/heal3.ogg")
-                    }
+        self.sounds['teleport']=self.audio3d.loadSfx("sfx/teleport.ogg")
+        self.sounds['teleport_fail']=self.audio3d.loadSfx("sfx/teleport_fail.ogg")
+        self.sounds['block2']=self.audio3d.loadSfx("sfx/block2.ogg")
+        self.sounds['flame']=self.audio3d.loadSfx("sfx/flame2.ogg")
+        self.sounds['spell']=self.audio3d.loadSfx("sfx/burn2.ogg")
+
         self.sounds['walk'].setLoop(True)       
         for sound in self.sounds:
             self.audio3d.attachSoundToObject(self.sounds[sound], self.node)
         
         self.magmaSound=base.loader.loadSfx("sfx/magma_flow2.ogg")
         self.magmaSound.setLoop(True)  
+
         #camera
         self.cameraNode  = render.attachNewNode("cameraNode")         
         self.cameraNode.setZ(-1)
@@ -3185,125 +1916,11 @@ class PC4(DirectObject):
         self.Ambient.setPos(base.camera.getPos(render))
         self.Ambient.lookAt(self.node)
         render.setLight(self.Ambient)
-        
-        
-            
-        
-        #shaders
-        if not self.common['safemode']:    
-            render.setShaderInput("slight0", self.Ambient)        
-            render.setShaderInput("plight0", self.pLightNode)
-            
-            tex = loader.loadTexture('fog2.png')
-            self.proj = render.attachNewNode(LensNode('proj'))
-            #lens = OrthographicLens()        
-            #lens.setFilmSize(3, 3)  
-            lens=PerspectiveLens()        
-            lens.setFov(45)
-            self.proj.node().setLens(lens)
-            #self.proj.node().showFrustum() 
-            self.proj.reparentTo(render)
-            self.proj.setHpr(180, 45, 0)
-            self.proj.setZ(0.0)
-            self.proj.reparentTo(self.cameraNode)
-            ts = TextureStage('ts')
-            tex.setWrapU(Texture.WMBorderColor  )
-            tex.setWrapV(Texture.WMBorderColor  )
-            tex.setBorderColor(Vec4(1,1,1,1))  
-            self.black.projectTexture(ts, tex, self.proj)        
-            self.walls.projectTexture(ts, tex, self.proj)
-        
-        
-            #shadows    
-            self.floor.projectTexture(self.common['shadow_ts'] , self.common['shadowTexture'], self.common['shadowCamera'])  
-            #base.bufferViewer.toggleEnable()
-            #base.bufferViewer.setPosition("ulcorner")
-            #base.bufferViewer.setCardSize(.5, 0.0) 
-        
-        #the plane will by used to see where the mouse pointer is
-        self.plane = Plane(Vec3(0, 0, 1), Point3(0, 0, 0.1))        
-       
-        #key mapping
-        self.keyMap = {'key_forward': False,
-                        'key_back': False,
-                        'key_left': False,
-                        'key_right': False,
-                        'key_cam_left': False,
-                        'key_cam_right': False,
-                        'key_action1': False,
-                        'key_action2': False}
-        #prime key
-        self.accept(common['keymap']['key_forward'][0], self.keyMap.__setitem__, ["key_forward", True])
-        self.accept(common['keymap']['key_back'][0], self.keyMap.__setitem__, ["key_back", True])
-        self.accept(common['keymap']['key_left'][0], self.keyMap.__setitem__, ["key_left", True])
-        self.accept(common['keymap']['key_right'][0], self.keyMap.__setitem__, ["key_right", True])
-        self.accept(common['keymap']['key_cam_left'][0], self.keyMap.__setitem__, ["key_cam_left", True])
-        self.accept(common['keymap']['key_cam_right'][0], self.keyMap.__setitem__, ["key_cam_right", True])
-        self.accept(common['keymap']['key_action1'][0], self.keyMap.__setitem__, ["key_action1", True])
-        self.accept(common['keymap']['key_action2'][0], self.keyMap.__setitem__, ["key_action2", True])
-        #alt key
-        self.accept(common['keymap']['key_forward'][1], self.keyMap.__setitem__, ["key_forward", True])
-        self.accept(common['keymap']['key_back'][1], self.keyMap.__setitem__, ["key_back", True])
-        self.accept(common['keymap']['key_left'][1], self.keyMap.__setitem__, ["key_left", True])
-        self.accept(common['keymap']['key_right'][1], self.keyMap.__setitem__, ["key_right", True])
-        self.accept(common['keymap']['key_cam_left'][1], self.keyMap.__setitem__, ["key_cam_left", True])
-        self.accept(common['keymap']['key_cam_right'][1], self.keyMap.__setitem__, ["key_cam_right", True])
-        self.accept(common['keymap']['key_action1'][1], self.keyMap.__setitem__, ["key_action1", True])
-        self.accept(common['keymap']['key_action2'][1], self.keyMap.__setitem__, ["key_action2", True])
-        self.accept(common['keymap']['key_forward'][0], self.keyMap.__setitem__, ["key_forward", True])
-        #prime key up
-        self.accept(common['keymap']['key_forward'][0]+"-up", self.keyMap.__setitem__, ["key_forward", False])
-        self.accept(common['keymap']['key_back'][0]+"-up", self.keyMap.__setitem__, ["key_back", False])
-        self.accept(common['keymap']['key_left'][0]+"-up", self.keyMap.__setitem__, ["key_left", False])
-        self.accept(common['keymap']['key_right'][0]+"-up", self.keyMap.__setitem__, ["key_right", False])
-        self.accept(common['keymap']['key_cam_left'][0]+"-up", self.keyMap.__setitem__, ["key_cam_left", False])
-        self.accept(common['keymap']['key_cam_right'][0]+"-up", self.keyMap.__setitem__, ["key_cam_right", False])
-        self.accept(common['keymap']['key_action1'][0]+"-up", self.keyMap.__setitem__, ["key_action1", False])
-        self.accept(common['keymap']['key_action2'][0]+"-up", self.keyMap.__setitem__, ["key_action2", False])
-        #alt key up
-        self.accept(common['keymap']['key_forward'][1]+"-up", self.keyMap.__setitem__, ["key_forward", False])
-        self.accept(common['keymap']['key_back'][1]+"-up", self.keyMap.__setitem__, ["key_back", False])
-        self.accept(common['keymap']['key_left'][1]+"-up", self.keyMap.__setitem__, ["key_left", False])
-        self.accept(common['keymap']['key_right'][1]+"-up", self.keyMap.__setitem__, ["key_right", False])
-        self.accept(common['keymap']['key_cam_left'][1]+"-up", self.keyMap.__setitem__, ["key_cam_left", False])
-        self.accept(common['keymap']['key_cam_right'][1]+"-up", self.keyMap.__setitem__, ["key_cam_right", False])
-        self.accept(common['keymap']['key_action1'][1]+"-up", self.keyMap.__setitem__, ["key_action1", False])
-        self.accept(common['keymap']['key_action2'][1]+"-up", self.keyMap.__setitem__, ["key_action2", False])
-        self.accept(common['keymap']['key_forward'][0]+"-up", self.keyMap.__setitem__, ["key_forward", False])
-        
-        #camera zoom
-        self.accept(common['keymap']['key_zoomin'][0], self.zoom_control,[0.1])
-        self.accept(common['keymap']['key_zoomout'][0],self.zoom_control,[-0.1])
-        self.accept(common['keymap']['key_zoomin'][1], self.zoom_control,[0.1])
-        self.accept(common['keymap']['key_zoomout'][1],self.zoom_control,[-0.1])
-        
-        #self.keyMap = { "w" : False,
-        #                "s" : False,
-        #                "a" : False,
-        #                "d" : False, 
-        #                "q" : False,
-        #                "e" : False,
-        #                "mouse1" : False,
-        #                "mouse3" : False,
-        #                "space"  : False
-        #                }
-        #for key in self.keyMap.keys():
-        #    self.accept(key, self.keyMap.__setitem__, [key, True])
-        #    self.accept(key+"-up", self.keyMap.__setitem__, [key, False])
-        
-        #self.accept("wheel_up", self.zoom_control,[0.1])
-        #self.accept("wheel_down", self.zoom_control,[-0.1])
-        
+
         self.aura=vfx(self.actor, texture='vfx/aura2.png',scale=.75, Z=.85, depthTest=False, depthWrite=False)
         self.aura.loop(0.02)
-        
-        self.lastPos=self.node.getPos(render)
-        self.camera_momentum=1.0
         self.powerUp=0
         self.teleportUp=0
-        self.actionLock=0
-        self.hitMonsters=set()
-        self.myWaypoints=[]
         self.HP=40.0
         self.MaxHP=40.0
         
@@ -3325,312 +1942,20 @@ class PC4(DirectObject):
         
         self.canTeleport=False
         self.playerHit=False
-        
-        #gui
-        wp = base.win.getProperties()
-        winX = wp.getXSize()
-        winY = wp.getYSize()
-        self.cursor=DirectFrame(frameSize=(-32, 0, 0, 32),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/cursor1.png',
-                                    parent=pixel2d)        
-        self.cursor.setPos(32,0, -32)
-        self.cursor.flattenLight()
-        self.cursor.setBin('fixed', 10)
-        self.cursor.setTransparency(TransparencyAttrib.MDual)
-        
-        self.cursorPowerUV=[0.0, 0.75]
-        self.cursorPower=DirectFrame(frameSize=(-64, 0, 0, 64),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/arc_grow2.png',
-                                    parent=self.cursor)
-        #self.cursorPower.setR(-45)
-        self.cursorPower.setPos(48,0, -48)
-        self.cursorPower.stateNodePath[0].setTexScale(TextureStage.getDefault(), 0.25, 0.25)        
-        self.cursorPower.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV[0], self.cursorPowerUV[1])
-        #self.cursor.setBin('fixed', 11)
-        self.cursorPower2=DirectFrame(frameSize=(-64, 0, 0, 64),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/arc_shrink.png',
-                                    parent=self.cursor)
-        self.cursorPowerUV2=[0.0, 0.75]
-        #self.cursorPower2.setR(135)
-        self.cursorPower2.setPos(48,0,-48)                                            
-        self.cursorPower2.stateNodePath[0].setTexScale(TextureStage.getDefault(), 0.25, 0.25)        
-        self.cursorPower2.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV2[0], self.cursorPowerUV2[1])
-        
-        self.healthFrame=DirectFrame(frameSize=(-512, 0, 0, 64),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/health_frame2.png',
-                                    parent=pixel2d)
-        self.healthFrame.setTransparency(TransparencyAttrib.MDual)
-        #self.healthFrame.setPos(512+200,0,-600)
-        
-        self.healthBar=DirectFrame(frameSize=(37, 0, 0, 16),
-                                    frameColor=(0, 1, 0, 1),
-                                    frameTexture='icon/glass4.png',
-                                    parent=pixel2d)
-        self.healthBar.setTransparency(TransparencyAttrib.MDual)
-        #self.healthBar.setPos(71+200,0,3-600)
-        self.healthBar.setScale(10,1, 1)
-        self.isOptionsOpen=True
-        self.options=DirectFrame(frameSize=(-256, 0, 0, 128),
-                                    frameColor=(1,1,1,1),
-                                    frameTexture='icon/options.png',
-                                    parent=pixel2d)
-        self.options.setTransparency(TransparencyAttrib.MDual)
-        #self.options.setPos(210+winX,0,-128+84) 
-        self.options.setPos(winX,0,-128) 
-        self.options.setBin('fixed', 1)
-        self.options_close=DirectFrame(frameSize=(-32, 0, 0, 32),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_close.setPos(-221, 0, 5)
-        self.options_close.bind(DGG.B1PRESS, self.optionsSet,['close']) 
-        self.options_exit=DirectFrame(frameSize=(-200, 0, 0, 40),
-                                    frameColor=(1,1,1,0), 
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_exit.bind(DGG.B1PRESS, self.optionsSet,['exit'])                                    
-        self.options_slider1 = DirectSlider(range=(0,100),
-                                    value=self.common['soundVolume'],
-                                    pageSize=10,      
-                                    thumb_relief=DGG.FLAT,
-                                    thumb_frameTexture='glass3.png',
-                                    scale=70,
-                                    thumb_frameSize=(0.07, -0.07, -0.11, 0.11),
-                                    frameTexture='glass2.png',                                    
-                                    command=self.optionsSet,
-                                    extraArgs=["audio"],
-                                    parent=pixel2d) 
-        self.options_slider1.setBin('fixed', 2)                                         
-        self.options_slider1.setPos(-95+winX,0,-24) 
-        self.options_slider1.wrtReparentTo(self.options)
-        
-        self.options_slider2 = DirectSlider(range=(0,100),
-                                    value= self.common['musicVolume'],
-                                    pageSize=10,      
-                                    thumb_relief=DGG.FLAT,
-                                    thumb_frameTexture='glass3.png',
-                                    scale=70,
-                                    thumb_frameSize=(0.07, -0.07, -0.11, 0.11),
-                                    frameTexture='glass2.png',                                    
-                                    command=self.optionsSet,
-                                    extraArgs=["music"],
-                                    parent=pixel2d) 
-        self.options_slider2.setBin('fixed', 2)                                         
-        self.options_slider2.setPos(-95+winX,0,-50) 
-        self.options_slider2.wrtReparentTo(self.options)
-        
-        self.options_rew=DirectFrame(frameSize=(-16, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_rew.setPos(-185, 0, 50)
-        self.options_rew.bind(DGG.B1PRESS, self.optionsSet,['rew'])
-        
-        self.options_loop=DirectFrame(frameSize=(-16, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_loop.setPos(-159, 0, 50)
-        self.options_loop.bind(DGG.B1PRESS, self.optionsSet,['loop'])
-        
-        self.options_play=DirectFrame(frameSize=(-16, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_play.setPos(-140, 0, 50)
-        self.options_play.bind(DGG.B1PRESS, self.optionsSet,['play'])
-        
-        self.options_shuffle=DirectFrame(frameSize=(-16, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_shuffle.setPos(-115, 0, 50)
-        self.options_shuffle.bind(DGG.B1PRESS, self.optionsSet,['shufle'])
-        
-        self.options_ff=DirectFrame(frameSize=(-16, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_ff.setPos(-92, 0, 50)
-        self.options_ff.bind(DGG.B1PRESS, self.optionsSet,['ff'])
-        
-        self.options_autocam=DirectFrame(frameSize=(-70, 0, 0, 16),
-                                    frameColor=(1,1,1,0), 
-                                    #frameTexture='icon/x.png',
-                                    state=DGG.NORMAL,                                    
-                                    parent=self.options)
-        self.options_autocam.setPos(-10, 0, 50)
-        self.options_autocam.bind(DGG.B1PRESS, self.optionsSet,['autocam'])
-        
-        #self.options.setPos(winX,0,-128) 
-        self.optionsSet("close")
-        
-        
-        
-        self.healthFrame.setPos(256+winX/2,0,-winY)
-        self.healthBar.setPos(71-256+winX/2,0,7-winY)      
-        
+
         #collisions
-        #self.traverser=CollisionTraverser("playerTrav")
-        #self.traverser.setRespectPrevTransform(True)
-        #self.traverser.showCollisions(render)
-        #self.queue = CollisionHandlerQueue() 
-        
-        #collision ray for testing visibility polygons
-        self.coll_ray=self.node.attachNewNode(CollisionNode('collRay'))        
-        self.coll_ray.node().addSolid(CollisionRay(0, 0, 2, 0,0,-180))
-        self.coll_ray.setTag("visibility", "0") 
-        self.coll_ray.node().setIntoCollideMask(BitMask32.allOff()) 
-        self.coll_ray.node().setFromCollideMask(BitMask32.bit(1))  
-        #self.traverser.addCollider(self.coll_ray, self.queue)  
         self.common['traverser'].addCollider(self.coll_ray, self.common['queue'])
-        
-        self.coll_ray2=self.magma_node.attachNewNode(CollisionNode('collRay'))        
+        self.coll_ray2=self.target_node.attachNewNode(CollisionNode('collRay'))        
         self.coll_ray2.node().addSolid(CollisionRay(0, 0, 2, 0,0,-180))
-        self.coll_ray2.setTag("teleport", "0") 
-        #self.coll_ray2.show()
-        self.coll_ray2.node().setIntoCollideMask(BitMask32.allOff()) 
-        self.coll_ray2.node().setFromCollideMask(BitMask32.bit(1))  
+        self.coll_ray2.setTag("teleport", "0")
+        #self.coll_sphere.show()
         #self.traverser.addCollider(self.coll_ray, self.queue)  
         self.common['traverser'].addCollider(self.coll_ray2, self.common['queue'])
-        
-        #collision sphere
-        self.mask_2_3=BitMask32.bit(3)
-        self.mask_2_3.setBit(2)
-        self.coll_sphere=self.node.attachNewNode(CollisionNode('playerSphere'))
-        self.coll_sphere.node().addSolid(CollisionSphere(0, 0, 0.6, 0.5))   
-        self.coll_sphere.setTag("player", "1") 
-        self.coll_sphere.node().setIntoCollideMask(BitMask32.bit(2))
-        self.coll_sphere.node().setFromCollideMask(self.mask_2_3)
-        #self.traverser.addCollider(self.coll_sphere, self.queue)
-        self.common['traverser'].addCollider(self.coll_sphere, self.common['queue'])
-        #self.coll_sphere.show()
-        
-        self.accept( 'window-event', self.windowEventHandler) 
-        self.accept("escape",self.optionsSet, ['close'])
-        
-        taskMgr.add(self.__getMousePos, "mousePosTask")
-        taskMgr.add(self.update, "updatePC")                        
+         
         taskMgr.doMethodLater(0.05+self.teleportTime, self.teleport_task,'teleport_task')
         taskMgr.doMethodLater(0.05, self.magma_task,'magma_task')
         taskMgr.doMethodLater(0.5, self.magmaDamage,'magmaDamage')
-        
-    def optionsSet(self, opt, event=None):
-        if opt!="close" and opt!="audio" and opt!="music":
-            self.common['click'].play()
-        #print opt
-        if opt=="close":            
-            wp = base.win.getProperties()
-            winX = wp.getXSize()
-            if self.isOptionsOpen:
-                Sequence(LerpPosInterval(self.options, 0.1, VBase3(winX,0,-128+84)),LerpPosInterval(self.options, 0.2, VBase3(210+winX,0,-128+84))).start()
-                #self.options.setPos(210+winX,0,-128+84) 
-                #self.options_close['frameColor']=(1,1,1,0)
-                self.isOptionsOpen=False
-                #self.pauseCamera=False
-                self.options_exit.hide()
-                self.options_slider1.hide()
-                self.options_slider2.hide()
-                self.options_rew.hide()
-                self.options_loop.hide()
-                self.options_play.hide()
-                self.options_shuffle.hide()
-                self.options_ff.hide()
-                self.options_autocam.hide()
-            else:
-                Sequence(LerpPosInterval(self.options, 0.2, VBase3(winX,0,-128+84)),LerpPosInterval(self.options, 0.1, VBase3(winX,0,-128))).start()
-                #LerpPosInterval(self.options, 0.3, VBase3(winX,0,-128)).start()
-                #self.options.setPos(winX,0,-128)
-                #self.options_close['frameColor']=(1,1,1,1)
-                self.isOptionsOpen=True
-                #self.pauseCamera=True
-                self.options_exit.show()
-                self.options_slider1.show()
-                self.options_slider2.show()
-                self.options_rew.show()
-                self.options_loop.show()
-                self.options_play.show()
-                self.options_shuffle.show()
-                self.options_ff.show()
-                self.options_autocam.show()
-        elif opt=="exit":
-            self.destroy()
-        elif opt=="audio":            
-             base.sfxManagerList[0].setVolume(self.options_slider1['value']*0.01)
-        elif opt=="music":
-            self.common['music'].setVolume(self.options_slider2['value'])
-            #base.musicManager.setVolume(self.options_slider2['value']*0.01)
-        elif opt=="rew":
-            self.common['music'].REW()
-        elif opt=="loop":
-            self.common['music'].setLoop(True)
-        elif opt=="play":
-            self.common['music'].setLoop(False)
-        elif opt=="shufle":
-            self.common['music'].setShuffle()
-        elif opt=="ff":
-            self.common['music'].FF()
-        elif opt=="autocam":
-            if self.autoCamera:
-                self.autoCamera=False
-            else:
-                self.autoCamera=True            
-        
-            
-    def heal(self):
-        self.sounds["heal"].play()
-        vfx(self.node, texture='vfx/vfx3.png', scale=.8, Z=1.0, depthTest=False, depthWrite=False).start(0.03)                         
-        self.healthBar.setScale(10,1, 1)        
-        self.healthBar['frameColor']=(0, 1, 0, 1)
-        self.HP=self.MaxHP
-        
-    def zoom(self, t):
-        Z=base.camera.getY(self.cameraNode)
-        #print Z
-        if Z>=-5 and t>0:
-            t=0 
-        elif Z<=-16 and t<0:
-            t=0         
-        base.camera.setY(base.camera, t)        
-        base.camera.setZ(base.camera, -t/2.5)
-        base.camera.setP(base.camera, t*2.0)
-        
-    def hit(self, damage):
-        #print "hit"
-        self.sounds[random.choice(["pain1", "pain2"])].play()
-        vfx(self.node, texture='vfx/blood_red.png', scale=.3, Z=1.0, depthTest=True, depthWrite=True).start(0.016)                         
-            
-        #damage=round(damage,0)    
-        self.HP-=damage        
-        #print self.HP
-        if self.HP<=0:
-            if(self.actor.getCurrentAnim()!="die"):
-                self.actor.play("die") 
-                self.sounds["walk"].stop()
-                self.coll_sphere.node().setFromCollideMask(BitMask32.allOff())
-                self.coll_sphere.node().setIntoCollideMask(BitMask32.allOff())
-            self.HP=0
-        elif(self.actor.getCurrentAnim()!="hit"):
-                self.actor.play("hit")   
-        self.healthBar.setScale(10*self.HP/self.MaxHP,1, 1)
-        green=self.HP/self.MaxHP
-        self.healthBar['frameColor']=(1-green, green, 0, 1)
-        self.sounds["walk"].stop()            
-        #self.keyMap["w"]=False
-        #self.keyMap["s"]=False
-        #self.keyMap["a"]=False
-        #self.keyMap["d"]=False
-        
+     
     def attack(self, power=1):       
         self.attack_ray.node().setFromCollideMask(BitMask32.allOff())   
         #print self.hitMonsters
@@ -3678,7 +2003,7 @@ class PC4(DirectObject):
     def magmaMover(self, task):  
         if self.magmaList[-1].getCurrentAnim()=="flow":   
             return task.done
-        LerpPosInterval(self.magmaList[-1], 0.6, self.magma_node.getPos()).start()
+        LerpPosInterval(self.magmaList[-1], 0.6, self.target_node.getPos()).start()
         LerpHprInterval(self.magmaList[-1], 0.2, self.magmaList[-1].getHpr()+Point3(10,0,0)).start()
         return task.again
     
@@ -3688,15 +2013,15 @@ class PC4(DirectObject):
         magma=Actor("models/lava", {"flow":"models/lava_anim"}) 
         magma.setBlend(frameBlend = True)        
         magma.reparentTo(render)        
-        magma.setPos(self.magma_node.getPos())
-        coll_sphere=magma.attachNewNode(CollisionNode('magmaSphere'))
-        coll_sphere.node().addSolid(CollisionSphere(0, 0, 0.4, 0.45))   
-        coll_sphere.setTag("magma", "1") 
+        magma.setPos(self.target_node.getPos())
+        coll_sphere2=magma.attachNewNode(CollisionNode('magmaSphere'))
+        coll_sphere2.node().addSolid(CollisionSphere(0, 0, 0.4, 0.45))   
+        coll_sphere2.setTag("magma", "1") 
         #coll_sphere.show()
-        coll_sphere.node().setIntoCollideMask(BitMask32.allOff())
-        coll_sphere.node().setFromCollideMask(self.mask_2_3)        
-        self.common['traverser'].addCollider(coll_sphere, self.common['queue'])
-        magma.setPythonTag("collider",coll_sphere)       
+        coll_sphere2.node().setIntoCollideMask(BitMask32.allOff())
+        coll_sphere2.node().setFromCollideMask(self.mask_2_3)        
+        self.common['traverser'].addCollider(coll_sphere2, self.common['queue'])
+        magma.setPythonTag("collider",coll_sphere2)       
         magma.setScale(0.3*self.magmaSize) 
         self.magmaList.append(magma)                
         taskMgr.doMethodLater(0.2, self.magmaMover, 'magma_task')
@@ -3763,15 +2088,7 @@ class PC4(DirectObject):
             if self.powerUp>0:
                self.magmaDrop()               
         return task.again     
-        
-    def resetPointer(self):
-        p3 = base.cam.getRelativePoint(render, self.node.getPos())
-        p2 = Point2()
-        newPos=(0,0,0)
-        if base.camLens.project(p3, p2):
-            r2d = Point3(p2[0], 0, p2[1])
-            newPos = pixel2d.getRelativePoint(render2d, r2d)                            
-            base.win.movePointer(0,int(newPos[0]),-int(newPos[2])-20)
+
     
     def resetLight(self):
         if not self.magmaList:
@@ -3795,8 +2112,8 @@ class PC4(DirectObject):
         if self.canTeleport:           
             self.sounds['teleport'].play()
             vfx(self.actor, texture='vfx/tele2.png',scale=.5, Z=.85, depthTest=False, depthWrite=False).start()
-            self.node.setPos(self.magma_node.getPos())
-            Sequence(Wait(0.1), Func(self.resetPointer)).start()        
+            self.node.setPos(self.target_node.getPos())
+            Sequence(Wait(0.1), Func(self.resetPointer,self.node.getPos())).start()        
         else:
             self.sounds['teleport_fail'].play()
             
@@ -3819,9 +2136,6 @@ class PC4(DirectObject):
                 self.cursorPowerUV2[1]+=0.25           
             self.cursorPower2.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV2[0], self.cursorPowerUV2[1])               
         return task.again
-        
-    def zoom_control(self, amount):
-        LerpFunc(self.zoom,fromData=0,toData=amount, duration=.5, blendType='easeOut').start()
         
     def update(self, task):
         dt = globalClock.getDt()
@@ -3970,98 +2284,14 @@ class PC4(DirectObject):
                 self.actor.loop("idle")  
                 
         return task.cont        
-        
-    def __getMousePos(self, task):
-        if base.mouseWatcherNode.hasMouse():
-            mpos = base.mouseWatcherNode.getMouse()
-            pos3d = Point3()
-            nearPoint = Point3()
-            farPoint = Point3()
-            base.camLens.extrude(mpos, nearPoint, farPoint)          
-            if self.plane.intersectsLine(pos3d, render.getRelativePoint(camera, nearPoint),render.getRelativePoint(camera, farPoint)):            
-                #if self.camera_momentum==0:
-                if self.HP>0:            
-                    self.node.headsUp(pos3d) 
-                self.pLightNode.setPos(pos3d)
-                self.pLightNode.setZ(2.7) 
-                self.magma_node.setPos(pos3d)
-                self.magma_node.setZ(0)
-                if not self.common['safemode']:
-                    if self.node.getDistance(self.pLightNode)<13.0: 
-                        self.common['shadowNode'].setPos(self.pLightNode.getPos(render))
-                        self.common['shadowNode'].setZ(2.7)
-            pos2d=Point3(base.mouseWatcherNode.getMouseX() ,0, base.mouseWatcherNode.getMouseY())
-            self.cursor.setPos(pixel2d.getRelativePoint(render2d, pos2d))  
-        return task.again        
-        
-    def windowEventHandler( self, window=None ):    
-        if window is not None: # window is none if panda3d is not started
-            wp = base.win.getProperties()
-            winX = wp.getXSize()
-            winY = wp.getYSize()    
-            self.healthFrame.setPos(256+winX/2,0,-winY)
-            self.healthBar.setPos(71-256+winX/2,0,7-winY) 
-            if self.isOptionsOpen:
-                self.options.setPos(winX,0,-128) 
-            else:
-                self.options.setPos(210+winX,0,-128+84) 
-                
+     
     def destroy(self): 
-        self.common['levelLoader'].unload(True)      
-    
-        if taskMgr.hasTaskNamed("mousePosTask"):
-            taskMgr.remove("mousePosTask")
-        if taskMgr.hasTaskNamed("updatePC"):
-            taskMgr.remove("updatePC")
         if taskMgr.hasTaskNamed("teleport_task"):
             taskMgr.remove("teleport_task")
         if taskMgr.hasTaskNamed("magma_task"):
             taskMgr.remove("magma_task")  
         if taskMgr.hasTaskNamed("magmaDamage"):
             taskMgr.remove("magmaDamage")     
-        self.healthFrame.destroy()
-        self.healthBar.destroy()
-        self.cursor.destroy()
-        self.cursorPower.destroy()
-        self.cursorPower2.destroy()
-        self.options.destroy()
-        self.options_close.destroy()
-        self.options_exit.destroy()
-        self.options_slider1.destroy()
-        self.options_slider2.destroy()
-        
-        self.actor.cleanup() 
-        render.setLightOff()
-        self.ignoreAll()
-
-        self.actor.removeNode()
-        #self.floor.setShaderOff()
-        #self.walls.setShaderOff()
-        #self.black.setShaderOff()
-        self.pLightNode.removeNode()
-        self.Ambient.removeNode()
-        #self.walls.clearProjectTexture()
-        #self.black.clearProjectTexture()
-
-        self.cameraNode.removeNode()
-        base.camera.reparentTo(render)
-
-        #self.plane.removeNode()
-
-        self.keyMap = None
-
-        self.lastPos=None
-        self.camera_momentum=None
-        self.powerUp=None
-        self.shieldUp=None
-        self.actionLock=None
-        self.hitMonsters=None
-        self.myWaypoints=None
-        self.HP=None
-        self.blockPower=None 
-        self.cursorPowerUV=None
-        self.cursorPowerUV2=None
-        self.isBlockin=None
         
         for magma in self.magmaList:
             self.magmaRemove(magma)
@@ -4073,7 +2303,5 @@ class PC4(DirectObject):
         self.coll_ray.removeNode()
         self.coll_sphere.removeNode()
         #self.attack_ray.removeNode()        
-        self.node.setPos(0,0,0)
-        self.common['player_node']=self.node
-        self.common['CharGen'].load()
+        super().destroy()
                 
