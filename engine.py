@@ -596,13 +596,13 @@ class Spawner():
 class MusicPlayer():
     def __init__(self, common):
         self.common=common
-        self.musicList=[base.loadMusic("music/LuridDeliusion.ogg"),
-                        base.loadMusic("music/Defying.ogg"),
-                        base.loadMusic("music/Descent.ogg"),
-                        base.loadMusic("music/HeroicDemise.ogg"),
-                        base.loadMusic("music/HeroicDemiseNoChoir.ogg"),
-                        base.loadMusic("music/Wasteland.ogg"),
-                        base.loadMusic("music/WastelandNoChoir.ogg")]
+        self.musicList=[base.loader.loadMusic("music/LuridDeliusion.ogg"),
+                        base.loader.loadMusic("music/Defying.ogg"),
+                        base.loader.loadMusic("music/Descent.ogg"),
+                        base.loader.loadMusic("music/HeroicDemise.ogg"),
+                        base.loader.loadMusic("music/HeroicDemiseNoChoir.ogg"),
+                        base.loader.loadMusic("music/Wasteland.ogg"),
+                        base.loader.loadMusic("music/WastelandNoChoir.ogg")]
         self.volume=base.musicManager.getVolume()
         self.track=0
         self.nextTrack=1

@@ -64,7 +64,7 @@ monsters=[
         "heading":0,
         "hit_vfx":'vfx/blood_red.png',
         "hit_sfx":'hit2',
-        "die_sfx":'die7',
+        "die_sfx":'die6',
         "arrowhit_sfx":'hit_arrow',
         "attack_sfx":'m_attack1',
         "attack_pattern":[.4],

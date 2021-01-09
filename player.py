@@ -1913,6 +1913,7 @@ class PC4(Player):
         self.common['traverser'].addCollider(self.coll_ray, self.common['queue'])
         self.coll_ray2=self.target_node.attachNewNode(CollisionNode('collRay'))        
         self.coll_ray2.node().addSolid(CollisionRay(0, 0, 2, 0,0,-180))
+        self.coll_ray2.node().setIntoCollideMask(BitMask32.allOff())
         self.coll_ray2.setTag("teleport", "0")
         #self.coll_sphere.show()
         #self.traverser.addCollider(self.coll_ray, self.queue)  

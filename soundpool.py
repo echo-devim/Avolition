@@ -43,7 +43,6 @@ class SoundPool():
                                 'die4':self.audio3d.loadSfx("sfx/die4.ogg"),
                                 'die5':self.audio3d.loadSfx("sfx/die5.ogg"),
                                 'die6':self.audio3d.loadSfx("sfx/die6.ogg"),
-                                'die7':self.audio3d.loadSfx("sfx/die7.ogg"),
                                 'onFire':self.audio3d.loadSfx("sfx/flame2.ogg"),
                                 'die_metal':self.audio3d.loadSfx("sfx/die_metal.ogg"), 
                                 'spark':self.audio3d.loadSfx("sfx/spark.ogg")})
