@@ -172,15 +172,19 @@ class Monster():
         if self.stats['hp']>300:
             self.stats['hp']=300
         self.maxHP=self.stats['hp']
-        self.HPring=Actor("models/ring_morph", {'anim' : 'models/ring_anim'})
-        self.HPring.setScale(0.07)
-        self.HPring.setZ(0.4)
-        self.HPring.setLightOff()
-        self.HPring.reparentTo(self.node)
-        self.HPvis=self.HPring.controlJoint(None, 'modelRoot', 'morph01')
-        self.HPvis.setX(self.stats['hp']/300)
-        self.HPring.hide(BitMask32.bit(1))
-        self.HPring.hide()
+        self.healthBar=DirectFrame(frameSize=(37, 0, 0, 6),
+                                    frameColor=(1, 0, 0, 1),
+                                    frameTexture='icon/glass4.png',
+                                    parent=pixel2d)
+        self.healthBar.setTransparency(TransparencyAttrib.MDual)
+        self.healthBar.setScale(10,1, 1)
+        #self.healthBar.reparentTo(self.node)
+        wp = base.win.getProperties()
+        winX = wp.getXSize()
+        winY = wp.getYSize()
+        self.healthBar.setPos(71-256+winX/2,0,34-winY)
+        self.healthBar.hide()
+
         #self.HPring.setColorScale(0.0, 1.0, 0.0, 1.0)
 
         #gamestate variables
@@ -287,12 +291,10 @@ class Monster():
         #print damage
         self.stats['hp']-=damage
         scale=self.stats['hp']/self.maxHP
-        self.HPvis.setX(self.stats['hp']/300.0)
-        #self.HPring.setColor(0.8*(1.0-scale), 0.8*scale, 0.0, 1.0)
-        self.HPring.show()
-        self.HPring.setColorScale((1.0-scale), scale, 0.0, 1.0)
+        self.healthBar.show()
+        self.healthBar.setScale(10*self.stats['hp']/self.maxHP,1, 1)
         if self.stats['hp']<1:
-            self.HPring.hide()
+            self.healthBar.hide()
 
     def attack(self, pattern):
         if self.state=="DIE":

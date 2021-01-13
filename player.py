@@ -132,6 +132,14 @@ class Player(DirectObject):
             self.audio3d.attachSoundToObject(self.sounds[sound], self.node)
         
         
+        #Ring around player
+        #self.HPring=Actor("models/ring_morph", {'anim' : 'models/ring_anim'})
+        #self.HPring.setScale(0.07)
+        #self.HPring.setZ(0.4)
+        #self.HPring.setLightOff()
+        #self.HPring.reparentTo(self.node)
+        #self.HPring.show()
+
         #camera
         self.cameraNode  = render.attachNewNode("cameraNode")         
         self.cameraNode.setPos(0, -2.5, 0)
@@ -794,12 +802,11 @@ class Player(DirectObject):
         self.isBlockin=None
 
         self.common['traverser'].removeCollider(self.coll_ray)
-        self.common['traverser'].removeCollider(self.coll_sphere)
-        self.common['traverser'].removeCollider(self.attack_ray)        
+        self.common['traverser'].removeCollider(self.coll_sphere)      
 
         self.coll_ray.removeNode()
         self.coll_sphere.removeNode()
-        self.attack_ray.removeNode()        
+
         self.node.setPos(0,0,0)
         self.common['player_node']=self.node
         self.common['CharGen'].load()
@@ -948,6 +955,8 @@ class PC1(Player):
         if taskMgr.hasTaskNamed("regenerate_task"):
             taskMgr.remove("regenerate_task")
         super().destroy()
+        self.common['traverser'].removeCollider(self.attack_ray)
+        self.attack_ray.removeNode()
         
 class PC2(Player):  
     def __init__(self, common):
@@ -1395,14 +1404,10 @@ class PC2(Player):
         if taskMgr.hasTaskNamed("lightning_task"):
             taskMgr.remove("lightning_task")
         if taskMgr.hasTaskNamed("plasma_task"):
-            taskMgr.remove("plasma_task")            
-        self.common['traverser'].removeCollider(self.coll_ray)
-        self.common['traverser'].removeCollider(self.coll_sphere)
+            taskMgr.remove("plasma_task")
         self.common['traverser'].removeCollider(self.attack_ray)
         self.common['traverser'].removeCollider(self.plasma_coll)
         
-        self.coll_ray.removeNode()
-        self.coll_sphere.removeNode()
         self.attack_ray.removeNode()        
         super().destroy()
             
@@ -2263,12 +2268,10 @@ class PC4(Player):
         for magma in self.magmaList:
             self.magmaRemove(magma)
         
-        self.common['traverser'].removeCollider(self.coll_ray)
-        self.common['traverser'].removeCollider(self.coll_sphere)
-        #self.common['traverser'].removeCollider(self.attack_ray)        
+        self.common['traverser'].removeCollider(self.attack_ray)        
 
         self.coll_ray.removeNode()
         self.coll_sphere.removeNode()
-        #self.attack_ray.removeNode()        
+        self.attack_ray.removeNode()        
         super().destroy()
                 
