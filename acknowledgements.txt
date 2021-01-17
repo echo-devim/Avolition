@@ -1,0 +1,5 @@
+Thanks to:
+
+wezu - Developer of the original game (https://github.com/wezu/Avolition) and all his tools for panda3d
+ricemaster - sfx effect_notify.wav creator
+dersuperanton - 'Running Loud' sfx effect creator
