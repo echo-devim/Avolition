@@ -21,6 +21,12 @@ from direct.actor.Actor import Actor
 from direct.interval.IntervalGlobal import *
 from direct.filter.FilterManager import FilterManager
 from direct.gui.DirectGui import *
+from panda3d.core import *
+from direct.particles import Particles
+from panda3d.physics import BaseParticleRenderer
+from panda3d.physics import PointParticleRenderer
+from panda3d.physics import BaseParticleEmitter
+from direct.particles.ParticleEffect import ParticleEffect
 from vfx import vfx
 from vfx import MovingVfx
 import random
@@ -82,7 +88,7 @@ class Player(DirectObject):
             self.floor.projectTexture(self.common['shadow_ts'] , self.common['shadowTexture'], self.common['shadowCamera'])  
             #base.bufferViewer.toggleEnable()
             #base.bufferViewer.setPosition("ulcorner")
-            #base.bufferViewer.setCardSize(.5, 0.0)     
+            #base.bufferViewer.setCardSize(.5, 0.0)
     
     def __init__(self, common):
         self.common=common    
@@ -111,7 +117,7 @@ class Player(DirectObject):
         self.isIdle=True
         
         #sounds                
-        self.sounds={'walk':self.audio3d.loadSfx("sfx/walk_new.ogg"),
+        self.sounds={'walk':self.audio3d.loadSfx("sfx/running-loud.wav"),
                      'door_open':self.audio3d.loadSfx("sfx/door_open2.ogg"),
                      'door_locked':self.audio3d.loadSfx("sfx/door_locked.ogg"),
                      'key':self.audio3d.loadSfx("sfx/key_pickup.ogg"),
@@ -127,6 +133,7 @@ class Player(DirectObject):
                      'block2':self.audio3d.loadSfx("sfx/block2.ogg"),
                      'heal':self.audio3d.loadSfx("sfx/heal3.ogg")
                     }
+        self.sounds['walk'].setVolume(0.2)
         self.sounds['walk'].setLoop(True)       
         for sound in self.sounds:
             self.audio3d.attachSoundToObject(self.sounds[sound], self.node)
