@@ -35,13 +35,16 @@ from direct.showbase.PythonUtil import fitSrcAngle2Dest
 class Player(DirectObject):
     
     def resetPointer(self, point3D):
-        p3 = base.cam.getRelativePoint(render, point3D)
-        p2 = Point2()
-        newPos=(0,0,0)
-        if base.camLens.project(p3, p2):
-            r2d = Point3(p2[0], 0, p2[1])
-            newPos = pixel2d.getRelativePoint(render2d, r2d)                            
-            base.win.movePointer(0,int(newPos[0]),-int(newPos[2]))
+        if (point3D != None):
+            p3 = base.cam.getRelativePoint(render, point3D)
+            p2 = Point2()
+            newPos=(0,0,0)
+            if base.camLens.project(p3, p2):
+                r2d = Point3(p2[0], 0, p2[1])
+                newPos = pixel2d.getRelativePoint(render2d, r2d)                            
+                base.win.movePointer(0,int(newPos[0]),-int(newPos[2]))
+        else:
+            print("Warning: point3D is null")
 
     def onLevelLoad(self, common):
         self.node.setPos(0,0,0)
@@ -295,6 +298,7 @@ class Player(DirectObject):
         
         self.lastPos=self.node.getPos(render)
         self.camera_momentum=1.0
+        self.attack_extra_damage=0
         self.powerUp=0
         self.actionLock=0
         self.hitMonsters=set()
@@ -847,7 +851,7 @@ class PC1(Player):
         self.blockPower=(50+(self.common['pc_stat2']+1)/2)/100.0
         self.speed=(75+(101-self.common['pc_stat2'])/2)/100.0
         self.actor.setPlayRate(self.speed, "walk")
-        self.damage_delta=(1.0+self.common['pc_stat3']/50.0)
+        self.baseDamage=(1.0+self.common['pc_stat3']/50.0)
         self.crit_hit=(5+(101-self.common['pc_stat3'])/2)/100.0
         self.crit_dmg=5+(101-self.common['pc_stat3'])/5
         
@@ -877,7 +881,7 @@ class PC1(Player):
                 if monster:
                     monster=self.monster_list[int(monster)]
                     if monster:
-                        monster.onHit(power*self.damage_delta)
+                        monster.onHit((power*self.baseDamage)+self.attack_extra_damage)
                         if self.crit_hit>random.random():
                             Sequence(Wait(0.2), Func(monster.onHit, self.crit_dmg)).start()
         self.hitMonsters=set()
@@ -1018,7 +1022,7 @@ class PC2(Player):
         self.spark_b=14.0*(self.common['pc_stat2']-99.9)/100.0
         self.power_progress=1.0-(self.common['pc_stat3']/100.0)
         self.lastPos3d=None
-        #print self.plasma_amp
+        #print(self.plasma_amp)
         
         
         #lightning ray
@@ -1085,7 +1089,7 @@ class PC2(Player):
     def spark_dmg(self, power, distance):
         pow=(8.0*self.power_progress+power*(1.0-self.power_progress))/2.0
         #print pow
-        return pow*int(distance*self.spark_a-self.spark_b)/6.0
+        return self.attack_extra_damage+(pow*int(distance*self.spark_a-self.spark_b)/6.0)
     def spark_attack(self, power=1):       
         #self.attack_ray.node().setFromCollideMask(BitMask32.allOff())   
         #print self.hitMonsters
@@ -1101,7 +1105,7 @@ class PC2(Player):
     def plasma_dmg(self, power):
         #print power
         final=(power+5)*self.power_progress+((power+5)*(power+5)/15.0) *(1.0-self.power_progress)
-        return self.plasma_amp*final
+        return (self.plasma_amp*final)+self.attack_extra_damage
     def plasma_attack(self, power=1):       
         #self.attack_ray.node().setFromCollideMask(BitMask32.allOff())   
         if self.hitMonsters:
@@ -1457,7 +1461,7 @@ class PC3(Player):
         self.sounds['pain2']=self.audio3d.loadSfx("sfx/fem_pain2.ogg")
         self.sounds['fire']=self.audio3d.loadSfx("sfx/fire_arrow3.ogg")                    
         self.sounds['arm']=self.audio3d.loadSfx("sfx/draw_bow3.ogg")
-        self.sounds['run']=self.audio3d.loadSfx("sfx/run3.ogg")
+        self.sounds['run']=self.audio3d.loadSfx("sfx/running-loud.wav")
 
         self.sounds['walk'].setLoop(True)       
         self.sounds['run'].setLoop(True) 
@@ -1518,7 +1522,7 @@ class PC3(Player):
             else:
                 monster.arrows.add(arrow)
             power= arrow.getPythonTag('power')[2]
-            damage=power*self.baseDamage
+            damage=(power*self.baseDamage)+self.attack_extra_damage
             monster.onHit(damage, "arrow_hit")
             barb_roll=random.randrange(0, 101)            
             crit_roll=random.randrange(0, 101)
@@ -1944,7 +1948,7 @@ class PC4(Player):
                 if monster:
                     monster=self.monster_list[int(monster)]
                     if monster:
-                        monster.onHit(power*self.damage_delta)
+                        monster.onHit((power*self.damage_delta)+self.attack_extra_damage)
                         if self.crit_hit>random.random():
                             Sequence(Wait(0.2), Func(monster.onHit, self.crit_dmg)).start()
         self.hitMonsters=set()

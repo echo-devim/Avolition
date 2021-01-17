@@ -27,7 +27,11 @@ from vfx import short_vfx
 import random
 import data
 import json
-
+from direct.particles import Particles
+from panda3d.physics import BaseParticleRenderer
+from panda3d.physics import PointParticleRenderer
+from panda3d.physics import BaseParticleEmitter
+from direct.particles.ParticleEffect import ParticleEffect
 
 class Interactive():
     '''Object that are "clickable". Made from both a 3d object and a 2d UI
@@ -129,6 +133,71 @@ class Interactive():
             self.gui.hide()
         return task.again
 
+class RandomObject():
+    def __init__(self, id, common, node, render):
+        self.id = id
+        self.common = common
+        self.node = node
+        self.object=Actor("models/object", {'rotate' : 'models/object-rotate'})
+        self.object.setScale(0.20)
+        self.object.setZ(1.5)
+        self.object.reparentTo(render)
+        self.object.loop("rotate")
+        #Get last position of monster
+        (x,y,z) = self.node.getPos()
+        self.object.setPos((x,y,z+0.5))
+        base.enableParticles()
+        #Load particles
+        self.pe = ParticleEffect()
+        self.pe.loadConfig(Filename("vfx/object.ptf"))
+        self.pe.start(parent=self.object, renderParent=self.object)
+        self.ambientLight=AmbientLight('ambientLight')
+        self.ambientLight.setColor(VBase4(.3, .3, .3, 1))
+        self.ambientLightNode = render.attachNewNode(self.ambientLight)
+        self.object.setLight(self.ambientLightNode)
+        taskMgr.doMethodLater(.1, self.update,'random-object'+str(self.id))
+
+    def showLabel(self, message):
+        text = TextNode('onscreenmessage')
+        text.setText(message)
+        text.setFont(loader.loadFont('Bitter-Bold.otf'))
+        self.message = aspect2d.attachNewNode(text)
+        self.message.setScale(0.05)
+        window = base.win.getProperties()
+        windowX = window.getXSize()
+        windowY = window.getYSize()
+        self.message.setPos(-0.6,0,-0.8)
+
+    def update(self, task):
+        if self.object.getDistance(self.common['PC'].node)<1:
+            notifysound = base.loader.loadSfx("sfx/effect-notify.wav")
+            notifysound.play()
+            self.object.hide()
+            self.pe.disable()
+            #The object can heal the player or increase his force
+            n = random.random()
+            if (n <= 0.7):
+                self.common['PC'].heal()
+            else:
+                self.showLabel("Attack power temporarily increased +1")
+                self.common['PC'].attack_extra_damage += 1
+                taskMgr.doMethodLater(2, self.destroy,'show-message')
+            return task.done
+        return task.again
+    
+    def destroy(self, task):
+        taskMgr.remove('random-object' + str(self.id))
+        self.object.cleanup()
+        self.object.removeNode()
+        self.pe.cleanup()
+        self.pe.removeNode()
+        self.message.removeNode()
+        self.ambientLightNode.removeNode()
+        return task.done
+
+
+
+        
 
 class Monster():
     def __init__(self, setup_data, common, level=1.0, start_pos=(0,0,0)):
@@ -251,7 +320,18 @@ class Monster():
         self.node.setPos(render,start_pos)
         taskMgr.add(self.runAI, "AIfor"+str(self.id))
         taskMgr.doMethodLater(.6, self.runCollisions,'collFor'+str(self.id))
-        taskMgr.doMethodLater(1.0, self.damageOverTime,'DOTfor'+str(self.id))
+        taskMgr.doMethodLater(1.0, self.damageOverTime,'DOTfor'+str(self.id))    
+
+    def die(self, soundname):
+        if random.random() < 0.35:
+            id = len(self.common["random-objects"])
+            object = RandomObject(id, self.common, self.node, render)
+            self.common["random-objects"].append(object)
+        self.actor.play("die")
+        #self.common['soundPool'].play(self.soundID, self.sound_names["hit"])
+        self.common['soundPool'].play(self.soundID, soundname)
+        self.state="DIE"
+
 
     def damageOverTime(self, task):
         if self.state=="DIE":
@@ -260,10 +340,7 @@ class Monster():
             self.doDamage(self.DOT)
             self.DOT=int((self.DOT*0.9)-1.0)
             if self.stats['hp']<1:
-                self.actor.play("die")
-                #self.common['soundPool'].play(self.soundID, self.sound_names["hit"])
-                self.common['soundPool'].play(self.soundID, self.sound_names["die"])
-                self.state="DIE"
+                self.die(self.sound_names["die"])
             vfx(self.node, texture=self.vfx,scale=.5, Z=1.0, depthTest=True, depthWrite=True).start(0.016, 24)
         return task.again
 
@@ -290,7 +367,6 @@ class Monster():
             damage=1
         #print damage
         self.stats['hp']-=damage
-        scale=self.stats['hp']/self.maxHP
         self.healthBar.show()
         self.healthBar.setScale(10*self.stats['hp']/self.maxHP,1, 1)
         if self.stats['hp']<1:
@@ -336,10 +412,7 @@ class Monster():
         #self.soundset["spark"].play()
         #self.common['soundPool'].play(self.soundID, "spark")
         if self.stats['hp']<1:
-            self.actor.play("die")
-            #self.soundset["die3"].play()
-            self.common['soundPool'].play(self.soundID, "die3")
-            self.state="DIE"
+            self.die("die3")
             vfx(self.node, texture=self.vfx,scale=.5, Z=1.0, depthTest=True, depthWrite=True).start(0.016)
         #else:
         #    short_vfx(self.node, texture="vfx/short_spark.png",scale=.5, Z=1.0, depthTest=True, depthWrite=True).start(0.03)
@@ -368,12 +441,9 @@ class Monster():
         vfx(self.node, texture=self.vfx,scale=.5, Z=1.0, depthTest=True, depthWrite=True).start(0.016)         
 
         if self.stats['hp']<1:
-            self.actor.play("die")
-            #self.sounds["die"].play()
             if sound:
                 self.common['soundPool'].play(self.soundID, self.sound_names[sound])
-            self.common['soundPool'].play(self.soundID, self.sound_names["die"])
-            self.state="DIE"
+            self.die(self.sound_names["die"])
         else:
             #self.sounds["hit"].play()
             if sound:
@@ -453,7 +523,7 @@ class Monster():
         if self.state=="DIE":
             self.coll_sphere.node().setIntoCollideMask(BitMask32.allOff())
             self.coll_quad.removeNode()
-            self.actor.play("die")
+            #self.actor.play("die")
             self.common["kills"]-=1
             if self.common["kills"]==0:
                 Interactive(self.common, data.items['key'], self.node.getPos(render))                    
@@ -733,7 +803,12 @@ class LevelLoader():
                 if object:
                     object.destroy()
         self.common['interactiveList']=[]
-
+        #remove objects
+        if 'random-objects' in self.common:
+            for object in self.common["random-objects"]:
+                if object:
+                    object.destroy()
+        self.common["random-objects"] = []
         #remove music
         #self.music=[]
         #if self.common['music'].status() == self.common['music'].PLAYING:
@@ -789,6 +864,7 @@ class LevelLoader():
 
         self.common['waypoints']=[]
         self.common['waypoints_data']=[]
+        self.common["random-objects"] = []
 
         if 'PC' in self.common and PCLoad:
             self.common['PC'].onLevelLoad(self.common)
@@ -834,3 +910,9 @@ class LevelLoader():
 
         #spawner
         self.common['spawner'].start( data.levels[level]["map_monsters"], 1.0, data.levels[level]["num_monsters"])
+
+        #soft particles
+        base.enableParticles()
+        pe = ParticleEffect()
+        pe.loadConfig(Filename("vfx/softparticles.ptf"))
+        pe.start(parent=base.render2d, renderParent=base.render2d)
