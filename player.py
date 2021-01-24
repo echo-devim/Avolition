@@ -1117,21 +1117,26 @@ class PC2(Player):
                     monster=self.monster_list[int(monster)]
                     if monster:
                         dist=self.node.getDistance(monster.node)                           
-                        monster.onSparkHit(self.spark_dmg(power, dist))                        
+                        monster.onHit(self.spark_dmg(power, dist), weapon="spark")
         self.hitMonsters=set()
         
     def plasma_dmg(self, power):
+        print("plasma_dmg called")
         #print power
         final=(power+5)*self.power_progress+((power+5)*(power+5)/15.0) *(1.0-self.power_progress)
         return (self.plasma_amp*final)+self.attack_extra_damage
+
     def plasma_attack(self, power=1):       
+        print("plasma_attack called")
         #self.attack_ray.node().setFromCollideMask(BitMask32.allOff())   
         if self.hitMonsters:
+            print("HIT " + str(len(self.hitMonsters)))
             for monster in self.hitMonsters:
                 if monster:
                     monster=self.monster_list[int(monster)]
                     if monster:
-                        monster.onPlasmaHit(2*self.plasma_dmg(power))                        
+                        print("calling onHit for plasma")
+                        monster.onHit(2*self.plasma_dmg(power), weapon="plasma")                        
         self.hitMonsters=set()
     
     def end_boom(self):
@@ -1292,8 +1297,12 @@ class PC2(Player):
         return task.again
      
     def update(self, task):
-        dt = globalClock.getDt()    
-        self.common['traverser'].traverse(render) 
+        dt = globalClock.getDt()
+        self.common['traverser'].traverse(render)
+
+        if self.projectile.vfx and not self.isBoom:
+            self.plasma_coll.setPos(self.projectile.vfx.getPos())
+
         hit_wall=False  
         self.hitMonsters=set()    
         self.myWaypoints=[]
@@ -1794,7 +1803,7 @@ class PC4(Player):
                 if monster and self.monster_list:
                     monster=self.monster_list[int(monster)]
                     if monster:
-                        Sequence(Wait(random.uniform(0.0, 0.2)), Func(monster.onMagmaHit)).start()
+                        Sequence(Wait(random.uniform(0.0, 0.2)), Func(monster.onHit, damage=0, weapon="magma")).start()
         if self.playerHit:
             if self.HP<=0:
                 return task.done

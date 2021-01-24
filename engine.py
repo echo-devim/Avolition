@@ -391,60 +391,28 @@ class Monster():
             self.PC.hit(self.damage)
         Sequence(Wait(next), Func(self.attack, pattern)).start()
 
-    def onMagmaHit(self):
+    def onHit(self, damage, sound="hit", weapon=None):
+        print("HIT BY " + weapon)
         if self.state=="DIE":
             return
-        damage=self.lastMagmaDmg
-        self.doDamage(damage)
-        self.common['soundPool'].play(self.soundID, "onFire")
-        vfx(self.node, texture="vfx/small_flame.png",scale=.6, Z=.7, depthTest=False, depthWrite=False).start(0.016, stopAtFrame=24) 
-        if self.stats['hp']<1:
-            self.actor.play("die")
-            self.common['soundPool'].play(self.soundID, "die3")
-            self.state="DIE"
-            vfx(self.node, texture=self.vfx,scale=.5, Z=1.0, depthTest=True, depthWrite=True).start(0.016)
 
-    def onPlasmaHit(self, damage):
-        if self.state=="DIE":
-            return
-        self.doDamage(damage, True)
-        #self.soundset["spark"].play()
-        #self.common['soundPool'].play(self.soundID, "spark")
-        if self.stats['hp']<1:
-            self.die("die3")
-            vfx(self.node, texture=self.vfx,scale=.5, Z=1.0, depthTest=True, depthWrite=True).start(0.016)
-        #else:
-        #    short_vfx(self.node, texture="vfx/short_spark.png",scale=.5, Z=1.0, depthTest=True, depthWrite=True).start(0.03)
-
-    def onSparkHit(self, damage):
-        if self.state=="DIE":
-            return
-        #print damage
-        self.doDamage(damage)
-        #self.soundset["spark"].play()
-        self.common['soundPool'].play(self.soundID, "spark")
-        if self.stats['hp']<1:
-            self.actor.play("die")
-            #self.soundset["die3"].play()
-            self.common['soundPool'].play(self.soundID, "die3")
-            self.state="DIE"
-            vfx(self.node, texture=self.vfx,scale=.5, Z=1.0, depthTest=True, depthWrite=True).start(0.016) 
+        if weapon == "magma":
+            damage=self.lastMagmaDmg
+            self.common['soundPool'].play(self.soundID, "onFire")
+            vfx(self.node, texture="vfx/small_flame.png",scale=.6, Z=.7, depthTest=False, depthWrite=False).start(0.016, stopAtFrame=24)
+        elif weapon == "spark":
+            self.common['soundPool'].play(self.soundID, "spark")
+            short_vfx(self.node, texture="vfx/short_spark.png",scale=.5, Z=1.0, depthTest=True, depthWrite=True).start(0.03)
         else:
-            short_vfx(self.node, texture="vfx/short_spark.png",scale=.5, Z=1.0, depthTest=True, depthWrite=True).start(0.03) 
+            vfx(self.node, texture=self.vfx,scale=.5, Z=1.0, depthTest=True, depthWrite=True).start(0.016)
 
-    def onHit(self, damage, sound="hit"):
-        if self.state=="DIE":
-            return
-        self.doDamage(damage)
-        #print damage
-        vfx(self.node, texture=self.vfx,scale=.5, Z=1.0, depthTest=True, depthWrite=True).start(0.016)         
+        self.doDamage(damage)         
 
         if self.stats['hp']<1:
             if sound:
                 self.common['soundPool'].play(self.soundID, self.sound_names[sound])
             self.die(self.sound_names["die"])
         else:
-            #self.sounds["hit"].play()
             if sound:
                 self.common['soundPool'].play(self.soundID, self.sound_names[sound])
 
