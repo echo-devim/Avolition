@@ -26,6 +26,7 @@ import random, sys
 #from levelloader import LevelLoader
 from engine import *
 from player import *
+from boss import *
 #from player import PC2
 from direct.interval.ActorInterval import ActorInterval
 import webbrowser
@@ -569,6 +570,7 @@ class CharGen(DirectObject):
         pos=(data.levels[self.currentLevel]["enter"][0], data.levels[self.currentLevel]["enter"][1], data.levels[self.currentLevel]["enter"][2])     
         self.common['PC'].node.setPos(pos)
         self.common['music'].loop(1, fadeIn=True)
+        #self.boss1 = Boss(self.common)
         
     def open_www(self, url, event=None):
         webbrowser.open_new(url)

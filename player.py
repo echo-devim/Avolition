@@ -660,8 +660,9 @@ class Player(DirectObject):
             if entry.getFromNodePath().hasTag("player"):
                 hit_wall=True                
                 if entry.getIntoNodePath().hasTag("id"):
-                    self.monster_list[int(entry.getIntoNodePath().getTag("id"))].PCisInRange=True
-                    hit_wall=False                    
+                    monster = self.monster_list[int(entry.getIntoNodePath().getTag("id"))]
+                    monster.PCisInRange=True
+                    hit_wall=monster.isSolid                
             if entry.getFromNodePath().hasTag("attack"):
                 self.hitMonsters.add(entry.getIntoNodePath().getTag("id"))
             if entry.getIntoNodePath().hasTag("index"):
@@ -1330,8 +1331,9 @@ class PC2(Player):
             if entry.getFromNodePath().hasTag("player"):
                 hit_wall=True                
                 if entry.getIntoNodePath().hasTag("id"):
-                    self.monster_list[int(entry.getIntoNodePath().getTag("id"))].PCisInRange=True
-                    hit_wall=False                    
+                    monster = self.monster_list[int(entry.getIntoNodePath().getTag("id"))]
+                    monster.PCisInRange=True
+                    hit_wall=monster.isSolid                    
             if entry.getFromNodePath().hasTag("plasma"):
                 if entry.getIntoNodePath().hasTag("radar"):
                     pass
@@ -1765,8 +1767,9 @@ class PC3(Player):
             if entry.getFromNodePath().hasTag("player"):
                 hit_wall=True                
                 if entry.getIntoNodePath().hasTag("id"):
-                    self.monster_list[int(entry.getIntoNodePath().getTag("id"))].PCisInRange=True
-                    hit_wall=False                    
+                    monster = self.monster_list[int(entry.getIntoNodePath().getTag("id"))]
+                    monster.PCisInRange=True
+                    hit_wall=monster.isSolid
             if entry.getFromNodePath().hasTag("attack"):
                 self.hitMonsters.add(entry.getIntoNodePath().getTag("id"))
             if entry.getIntoNodePath().hasTag("index"):
@@ -2175,8 +2178,9 @@ class PC4(Player):
             if entry.getFromNodePath().hasTag("player"):
                 hit_wall=True                
                 if entry.getIntoNodePath().hasTag("id"):
-                    self.monster_list[int(entry.getIntoNodePath().getTag("id"))].PCisInRange=True
-                    hit_wall=False                    
+                    monster = self.monster_list[int(entry.getIntoNodePath().getTag("id"))]
+                    monster.PCisInRange=True
+                    hit_wall=monster.isSolid                 
             if entry.getFromNodePath().hasTag("magma"):               
                 status=entry.getFromNodePath().getTag("magma")
                 into=entry.getIntoNodePath()

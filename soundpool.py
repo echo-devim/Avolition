@@ -44,7 +44,7 @@ class SoundPool():
                                 'die5':self.audio3d.loadSfx("sfx/die5.ogg"),
                                 'die6':self.audio3d.loadSfx("sfx/die6.ogg"),
                                 'onFire':self.audio3d.loadSfx("sfx/flame2.ogg"),
-                                'die_metal':self.audio3d.loadSfx("sfx/die_metal.ogg"), 
+                                'die_metal':self.audio3d.loadSfx("sfx/die_metal.ogg"),
                                 'spark':self.audio3d.loadSfx("sfx/spark.ogg")})
             for sound in self.sounds[-1]:
                 self.audio3d.attachSoundToObject(self.sounds[-1][sound], self.sound_nodes[-1])
@@ -54,6 +54,19 @@ class SoundPool():
     def play(self, id, sound):
         #print id, " plays:",  sound
         self.sounds[id][sound].play()
+
+    def attachAndPlay(self, target, soundname, volume=1):
+        sfx3d=None
+        for snd in self.audio3d.getSoundsOnObject(target):
+            if (snd.getName() == soundname):
+                sfx3d = snd
+                break
+        if (sfx3d == None):
+            sfx3d = self.audio3d.loadSfx("sfx/" + soundname)
+            self.audio3d.attachSoundToObject(sfx3d, target)
+            sfx3d.setVolume(volume)
+        sfx3d.play()
+
 
     def get_id(self):
         if len(self.free_nodes)>0:

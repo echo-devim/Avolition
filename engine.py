@@ -1,5 +1,5 @@
 '''
-    Avolotion
+    Avolition
     Copyright (C) 2014  Grzegorz 'Wezu' Kalinski grzechotnik1984@gmail.com
 
     This program is free software: you can redistribute it and/or modify
@@ -22,6 +22,7 @@ from direct.actor.Actor import Actor
 from direct.interval.IntervalGlobal import *
 from direct.showbase.DirectObject import DirectObject
 from direct.gui.DirectGui import *
+from panda3d.ai import *
 from vfx import vfx
 from vfx import short_vfx
 import random
@@ -196,9 +197,6 @@ class RandomObject():
         return task.done
 
 
-
-        
-
 class Monster():
     def __init__(self, setup_data, common, level=1.0, start_pos=(0,0,0)):
         common['monsterList'].append(self)
@@ -272,6 +270,7 @@ class Monster():
         self.lastMagmaDmg=0
         self.DOT=0
         self.arrows=set()
+        self.isSolid=True
         self.traverser=CollisionTraverser("Trav"+str(self.id))
         #self.traverser.showCollisions(render)
         self.queue = CollisionHandlerQueue()
@@ -309,12 +308,12 @@ class Monster():
         self.coll_quad=loader.loadModel("models/plane")
         self.coll_quad.reparentTo(self.node)
 
-        #coll_quad=render.attachNewNode(CollisionNode('monsterSphere'))
-        #coll_quad.node().addSolid(CollisionPolygon(Point3(-.5, -.5, 2), Point3(-.5, .5, 0), Point3(.5, .5, 0), Point3(.5, .5, 2)))
-        #coll_quad.setTag("id", str(id))
-        #coll_quad.node().setIntoCollideMask(BitMask32.bit(2))
-        #coll_quad.reparentTo(self.node)
-        #coll_quad.show()
+        #self.coll_quad=render.attachNewNode(CollisionNode('monsterSphere'))
+        #self.coll_quad.node().addSolid(CollisionPolygon(Point3(-.5, -.5, 2), Point3(-.5, .5, 0), Point3(.5, .5, 0), Point3(.5, .5, 2)))
+        #self.coll_quad.setTag("id", str(id))
+        #self.coll_quad.node().setIntoCollideMask(BitMask32.bit(2))
+        #self.coll_quad.reparentTo(self.node)
+        #self.coll_quad.show()
 
         Sequence(Wait(random.uniform(.6, .8)), Func(self.restart)).start()
         self.node.setPos(render,start_pos)
@@ -408,7 +407,7 @@ class Monster():
     def onPlasmaHit(self, damage):
         if self.state=="DIE":
             return
-        self.doDamage(damage*1.5, True)
+        self.doDamage(damage, True)
         #self.soundset["spark"].play()
         #self.common['soundPool'].play(self.soundID, "spark")
         if self.stats['hp']<1:

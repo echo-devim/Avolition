@@ -1,5 +1,5 @@
 '''
-    Avolotion
+    Avolition
     Copyright (C) 2014  Grzegorz 'Wezu' Kalinski grzechotnik1984@gmail.com
 
     This program is free software: you can redistribute it and/or modify
