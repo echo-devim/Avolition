@@ -556,16 +556,16 @@ class CharGen(DirectObject):
         self.common['levelLoader'].load(self.currentLevel, PCLoad=False)
         #render.ls()
         if self.current_class=="1":
-            self.common['PC']=PC1(self.common)
+            self.common['PC']=Knight(self.common)
             #self.common['PC'].node.setPos(-12, 0, 0)
         elif self.current_class=="2": 
-            self.common['PC']=PC2(self.common)
+            self.common['PC']=Witch(self.common)
             #self.common['PC'].node.setPos(-12, 0, 0)
         elif self.current_class=="3": 
-            self.common['PC']=PC3(self.common)
+            self.common['PC']=Archer(self.common)
             #self.common['PC'].node.setPos(-12, 0, 0)    
         elif self.current_class=="4": 
-            self.common['PC']=PC4(self.common)
+            self.common['PC']=Wizard(self.common)
             #self.common['PC'].node.setPos(-12, 0, 0)
         pos=(data.levels[self.currentLevel]["enter"][0], data.levels[self.currentLevel]["enter"][1], data.levels[self.currentLevel]["enter"][2])     
         self.common['PC'].node.setPos(pos)

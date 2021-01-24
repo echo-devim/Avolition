@@ -808,7 +808,7 @@ class Player(DirectObject):
         self.common['player_node']=self.node
         self.common['CharGen'].load()
 
-class PC1(Player):      
+class Knight(Player):      
     
     def __init__(self, common): 
         super().__init__(common)
@@ -987,7 +987,7 @@ class PC1(Player):
         self.common['traverser'].removeCollider(self.attack_ray)
         self.attack_ray.removeNode()
         
-class PC2(Player):  
+class Witch(Player):  
     def __init__(self, common):
         super().__init__(common)     
         #actor
@@ -1361,7 +1361,7 @@ class PC2(Player):
         self.attack_ray.removeNode()        
         super().destroy()
             
-class PC3(Player):
+class Archer(Player):
  
     def __init__(self, common):
         super().__init__(common)
@@ -1700,7 +1700,7 @@ class PC3(Player):
         self.coll_sphere.removeNode()
         super().destroy()
         
-class PC4(Player):
+class Wizard(Player):
    
     def __init__(self, common):
         super().__init__(common)
