@@ -300,6 +300,7 @@ class Player(DirectObject):
         self.camera_momentum=1.0
         self.attack_extra_damage=0
         self.powerUp=0
+        self.speed=.8
         self.actionLock=0
         self.hitMonsters=set()
         self.myWaypoints=[]
@@ -459,7 +460,7 @@ class Player(DirectObject):
         self.healthBar.setPos(71-256+winX/2,0,7-winY)
         
         self.isBlockin=False
-        
+        self.isRunning=False
         #collisions
         #self.traverser=CollisionTraverser("playerTrav")
         #self.traverser.setRespectPrevTransform(True)
@@ -651,47 +652,27 @@ class Player(DirectObject):
             self.camera_momentum=0          
             
         if self.HP<=0:
-            return task.again        
-        
-        self.common['traverser'].traverse(render) 
-        hit_wall=False        
-        self.myWaypoints=[]
-        for entry in self.common['queue'].getEntries():
-            if entry.getFromNodePath().hasTag("player"):
-                hit_wall=True                
-                if entry.getIntoNodePath().hasTag("id"):
-                    monster = self.monster_list[int(entry.getIntoNodePath().getTag("id"))]
-                    monster.PCisInRange=True
-                    hit_wall=monster.isSolid                
-            if entry.getFromNodePath().hasTag("attack"):
-                self.hitMonsters.add(entry.getIntoNodePath().getTag("id"))
-            if entry.getIntoNodePath().hasTag("index"):
-                self.myWaypoints.append(int(entry.getIntoNodePath().getTag("index")))
-        
-        if hit_wall:
-            self.node.setPos(self.lastPos) 
-        
-        if self.isBlockin:   
-            self.sounds["walk"].stop()        
-            if(self.actor.getCurrentAnim()!="block"):
-                self.actor.loop("block")                
-            return task.cont 
-        
-        
-        anim=self.actor.getCurrentAnim()
-        if anim=="attack1" or anim =="attack2" or anim=="hit":
-            return task.cont             
+            return task.again           
         
         #move         
         self.lastPos=self.node.getPos(render) 
         if self.keyMap["key_forward"]: 
             self.isIdle=False
-            self.node.setFluidY(self.node, dt*4*self.speed)
-            self.actor.setPlayRate(1*self.speed, "walk") 
-            if(self.actor.getCurrentAnim()!="walk"):
-                self.actor.loop("walk")
-                if self.sounds["walk"].status() != self.sounds["walk"].PLAYING:
-                    self.sounds["walk"].play()
+            if self.isRunning:
+                self.node.setFluidY(self.node, dt*7)                
+                if(self.actor.getCurrentAnim()!="run"):
+                    self.actor.loop("run")
+                    if self.sounds["walk"].status() == self.sounds["walk"].PLAYING:
+                        self.sounds["walk"].stop()
+                    if self.sounds["run"].status() != self.sounds["run"].PLAYING:
+                        self.sounds["run"].play()
+            else:
+                self.node.setFluidY(self.node, dt*4*self.speed)
+                self.actor.setPlayRate(1, "walk") 
+                if(self.actor.getCurrentAnim()!="walk"):
+                    self.actor.loop("walk")
+                    if self.sounds["walk"].status() != self.sounds["walk"].PLAYING:
+                        self.sounds["walk"].play()
             if self.keyMap["key_right"]:
                 self.node.setFluidX(self.node, dt*1*self.speed)
             if self.keyMap["key_left"]:            
@@ -711,14 +692,18 @@ class Player(DirectObject):
         elif self.keyMap["key_back"]:  
             self.isIdle=False
             self.node.setFluidY(self.node, -dt*3*self.speed)
-            self.actor.setPlayRate(-0.8*self.speed, "walk") 
+            self.actor.setPlayRate(-0.8, "walk") 
             if(self.actor.getCurrentAnim()!="walk"):
                 self.actor.loop("walk") 
             if self.sounds["walk"].status() != self.sounds["walk"].PLAYING:
                 self.sounds["walk"].play()    
         else:
             self.isIdle=True
-                
+        
+        if not self.isRunning and "run" in self.sounds:
+            if self.sounds["run"].status() == self.sounds["run"].PLAYING:
+                self.sounds["run"].stop()
+        
         if self.isIdle:            
             self.sounds["walk"].stop()
             if(self.actor.getCurrentAnim()!="idle"):
@@ -897,7 +882,39 @@ class PC1(Player):
             green=self.HP/self.MaxHP
             self.healthBar['frameColor']=(1-green, green, 0, 1)
         return task.again
-  
+
+    def update(self, task):
+        self.common['traverser'].traverse(render) 
+        hit_wall=False        
+        self.myWaypoints=[]
+        for entry in self.common['queue'].getEntries():
+            if entry.getFromNodePath().hasTag("player"):
+                hit_wall=True                
+                if entry.getIntoNodePath().hasTag("id"):
+                    monster = self.monster_list[int(entry.getIntoNodePath().getTag("id"))]
+                    monster.PCisInRange=True
+                    hit_wall=monster.isSolid                
+            if entry.getFromNodePath().hasTag("attack"):
+                self.hitMonsters.add(entry.getIntoNodePath().getTag("id"))
+            if entry.getIntoNodePath().hasTag("index"):
+                self.myWaypoints.append(int(entry.getIntoNodePath().getTag("index")))
+        
+        if hit_wall:
+            self.node.setPos(self.lastPos) 
+        
+        if self.isBlockin:   
+            self.sounds["walk"].stop()        
+            if(self.actor.getCurrentAnim()!="block"):
+                self.actor.loop("block")                
+            return task.cont 
+        
+        
+        anim=self.actor.getCurrentAnim()
+        if anim=="attack1" or anim =="attack2" or anim=="hit":
+            return task.cont
+                
+        return super().update(task)
+
     def sword_task(self, task):
         if self.HP<=0:
             return task.done
@@ -1275,54 +1292,7 @@ class PC2(Player):
         return task.again
      
     def update(self, task):
-        dt = globalClock.getDt()
-        self.cameraNode.setPos(self.node.getPos(render))   
-        #auto camera:
-        if not self.isLightning:
-            if self.autoCamera and not self.pauseCamera and not self.isOptionsOpen:
-                origHpr = self.cameraNode.getHpr()
-                targetHpr = self.node.getHpr()
-                # Make the rotation go the shortest way around.
-                origHpr = VBase3(fitSrcAngle2Dest(origHpr[0], targetHpr[0]),
-                                     fitSrcAngle2Dest(origHpr[1], targetHpr[1]),
-                                     fitSrcAngle2Dest(origHpr[2], targetHpr[2]))
-
-                # How far do we have to go from here?
-                delta = max(abs(targetHpr[0] - origHpr[0]),
-                                abs(targetHpr[1] - origHpr[1]),
-                                abs(targetHpr[2] - origHpr[2]))
-                if delta>10 and delta<150 or self.keyMap["key_forward"]:                                    
-                    # Figure out how far we should rotate in this frame, based on the
-                    # distance to go, and the speed we should move each frame.
-                    t = dt*delta/2            
-                    if t> .020:
-                        t=.020
-                        
-                    # If we reach the target, stop there.
-                    t = min(t, 1.0)
-                    newHpr = origHpr + (targetHpr - origHpr) * t
-                    self.cameraNode.setHpr(newHpr)
-                    self.camera_momentum+=dt*3
-        
-        
-        if self.projectile.vfx and not self.isBoom:
-            self.plasma_coll.setPos(self.projectile.vfx.getPos())
-       
-        if self.camera_momentum>10.0:
-            self.camera_momentum=10.0
-        #rotate camera  
-        if self.keyMap["key_cam_right"]:    
-            self.cameraNode.setH(self.cameraNode, -70*dt* self.camera_momentum)
-            self.camera_momentum+=dt*3
-        elif self.keyMap["key_cam_left"]:        
-            self.cameraNode.setH(self.cameraNode, 70*dt* self.camera_momentum)
-            self.camera_momentum+=dt*3
-        else:
-            self.camera_momentum=0          
-            
-        if self.HP<=0:
-            return task.again        
-        
+        dt = globalClock.getDt()    
         self.common['traverser'].traverse(render) 
         hit_wall=False  
         self.hitMonsters=set()    
@@ -1367,51 +1337,9 @@ class PC2(Player):
             
         anim=self.actor.getCurrentAnim()
         if anim =="attack2" or anim=="hit":
-            return task.cont             
-        
-        #move         
-        self.lastPos=self.node.getPos(render) 
-        if self.keyMap["key_forward"]: 
-            self.isIdle=False
-            self.node.setFluidY(self.node, dt*4)
-            self.actor.setPlayRate(1, "walk") 
-            if(self.actor.getCurrentAnim()!="walk"):
-                self.actor.loop("walk")
-                if self.sounds["walk"].status() != self.sounds["walk"].PLAYING:
-                    self.sounds["walk"].play()
-            if self.keyMap["key_right"]:
-                self.node.setFluidX(self.node, dt*1)
-            if self.keyMap["key_left"]:            
-                self.node.setFluidX(self.node, -dt*1)
-        elif self.keyMap["key_right"]: 
-            self.isIdle=False
-            self.node.setFluidX(self.node, dt*4)
-            self.actor.setPlayRate(-2, "strafe") 
-            if(self.actor.getCurrentAnim()!="strafe"):
-                self.actor.loop("strafe")
-        elif self.keyMap["key_left"]:  
-            self.isIdle=False
-            self.node.setFluidX(self.node, -dt*4)
-            self.actor.setPlayRate(2, "strafe") 
-            if(self.actor.getCurrentAnim()!="strafe"):
-                self.actor.loop("strafe")                
-        elif self.keyMap["key_back"]:  
-            self.isIdle=False
-            self.node.setFluidY(self.node, -dt*3)
-            self.actor.setPlayRate(-0.8, "walk") 
-            if(self.actor.getCurrentAnim()!="walk"):
-                self.actor.loop("walk") 
-            if self.sounds["walk"].status() != self.sounds["walk"].PLAYING:
-                self.sounds["walk"].play()    
-        else:
-            self.isIdle=True
+            return task.cont 
                 
-        if self.isIdle:            
-            self.sounds["walk"].stop()
-            if(self.actor.getCurrentAnim()!="idle"):
-                self.actor.loop("idle")  
-                
-        return task.cont
+        return super().update(task)
                 
     def destroy(self): 
         if taskMgr.hasTaskNamed("lightning_task"):
@@ -1693,8 +1621,6 @@ class PC3(Player):
 
     def update(self, task):
         dt = globalClock.getDt()
-        self.cameraNode.setPos(self.node.getPos(render))  
-        
         #arrows
         newArrowsArray = []
         for arrow in self.arrows:
@@ -1707,48 +1633,7 @@ class PC3(Player):
                 #print "removed!"
             else:
                 newArrowsArray.append(arrow)            
-        self.arrows = newArrowsArray
-        
-        #auto camera:
-        if self.autoCamera and not self.pauseCamera and not self.isOptionsOpen:
-            origHpr = self.cameraNode.getHpr()
-            targetHpr = self.node.getHpr()
-            # Make the rotation go the shortest way around.
-            origHpr = VBase3(fitSrcAngle2Dest(origHpr[0], targetHpr[0]),
-                                 fitSrcAngle2Dest(origHpr[1], targetHpr[1]),
-                                 fitSrcAngle2Dest(origHpr[2], targetHpr[2]))
-
-            # How far do we have to go from here?
-            delta = max(abs(targetHpr[0] - origHpr[0]),
-                            abs(targetHpr[1] - origHpr[1]),
-                            abs(targetHpr[2] - origHpr[2]))
-            if delta>20 and delta<150 or self.keyMap["key_forward"]:                                    
-                # Figure out how far we should rotate in this frame, based on the
-                # distance to go, and the speed we should move each frame.
-                t = dt*delta/2            
-                if t> .020:
-                    t=.020
-                    
-                # If we reach the target, stop there.
-                t = min(t, 1.0)
-                newHpr = origHpr + (targetHpr - origHpr) * t
-                self.cameraNode.setHpr(newHpr)
-                self.camera_momentum+=dt*3
-                
-        if self.camera_momentum>10.0:
-            self.camera_momentum=10.0            
-        #rotate camera  
-        if self.keyMap["key_cam_right"]:    
-            self.cameraNode.setH(self.cameraNode, -70*dt* self.camera_momentum)
-            self.camera_momentum+=dt*3
-        elif self.keyMap["key_cam_left"]:        
-            self.cameraNode.setH(self.cameraNode, 70*dt* self.camera_momentum)
-            self.camera_momentum+=dt*3
-        else:
-            self.camera_momentum=0          
-            
-        if self.HP<=0:
-            return task.again        
+        self.arrows = newArrowsArray    
         
         self.common['traverser'].traverse(render) 
         hit_wall=False        
@@ -1784,62 +1669,8 @@ class PC3(Player):
             
         if self.powerUp>0:        
             return task.cont
-        #move         
-        self.lastPos=self.node.getPos(render) 
-        if self.keyMap["key_forward"]: 
-            self.isIdle=False
-            if self.isRunning:
-                self.node.setFluidY(self.node, dt*7)                
-                if(self.actor.getCurrentAnim()!="run"):
-                    self.actor.loop("run")
-                    if self.sounds["walk"].status() == self.sounds["walk"].PLAYING:
-                        self.sounds["walk"].stop()
-                    if self.sounds["run"].status() != self.sounds["run"].PLAYING:
-                        self.sounds["run"].play()
-            else:
-                self.node.setFluidY(self.node, dt*4*self.speed)
-                self.actor.setPlayRate(1, "walk") 
-                if(self.actor.getCurrentAnim()!="walk"):
-                    self.actor.loop("walk")
-                    if self.sounds["walk"].status() != self.sounds["walk"].PLAYING:
-                        self.sounds["walk"].play()
-            if self.keyMap["key_right"]:
-                self.node.setFluidX(self.node, dt*1*self.speed)
-            if self.keyMap["key_left"]:            
-                self.node.setFluidX(self.node, -dt*1*self.speed)
-        elif self.keyMap["key_right"]: 
-            self.isIdle=False
-            self.node.setFluidX(self.node, dt*4*self.speed)
-            self.actor.setPlayRate(-2, "strafe") 
-            if(self.actor.getCurrentAnim()!="strafe"):
-                self.actor.loop("strafe")
-        elif self.keyMap["key_left"]:  
-            self.isIdle=False
-            self.node.setFluidX(self.node, -dt*4*self.speed)
-            self.actor.setPlayRate(2, "strafe") 
-            if(self.actor.getCurrentAnim()!="strafe"):
-                self.actor.loop("strafe")                
-        elif self.keyMap["key_back"]:  
-            self.isIdle=False
-            self.node.setFluidY(self.node, -dt*3*self.speed)
-            self.actor.setPlayRate(-0.8, "walk") 
-            if(self.actor.getCurrentAnim()!="walk"):
-                self.actor.loop("walk") 
-            if self.sounds["walk"].status() != self.sounds["walk"].PLAYING:
-                self.sounds["walk"].play()    
-        else:
-            self.isIdle=True
-        
-        if not self.isRunning:
-            if self.sounds["run"].status() == self.sounds["run"].PLAYING:
-                self.sounds["run"].stop()
-        
-        if self.isIdle:            
-            self.sounds["walk"].stop()
-            if(self.actor.getCurrentAnim()!="idle"):
-                self.actor.loop("idle")  
                 
-        return task.cont              
+        return super().update(task)       
  
     def destroy(self): 
         if taskMgr.hasTaskNamed("run_task"):
@@ -2124,50 +1955,6 @@ class PC4(Player):
         return task.again
         
     def update(self, task):
-        dt = globalClock.getDt()
-        self.cameraNode.setPos(self.node.getPos(render))  
-        #self.magma_node.setH(self.magma_node, 15*dt)
-        #auto camera:
-        if self.autoCamera and not self.pauseCamera and not self.isOptionsOpen:
-            origHpr = self.cameraNode.getHpr()
-            targetHpr = self.node.getHpr()
-            # Make the rotation go the shortest way around.
-            origHpr = VBase3(fitSrcAngle2Dest(origHpr[0], targetHpr[0]),
-                                 fitSrcAngle2Dest(origHpr[1], targetHpr[1]),
-                                 fitSrcAngle2Dest(origHpr[2], targetHpr[2]))
-
-            # How far do we have to go from here?
-            delta = max(abs(targetHpr[0] - origHpr[0]),
-                            abs(targetHpr[1] - origHpr[1]),
-                            abs(targetHpr[2] - origHpr[2]))
-            if delta>10 and delta<150 or self.keyMap["key_forward"]:                                    
-                # Figure out how far we should rotate in this frame, based on the
-                # distance to go, and the speed we should move each frame.
-                t = dt*delta/2            
-                if t> .020:
-                    t=.020
-                    
-                # If we reach the target, stop there.
-                t = min(t, 1.0)
-                newHpr = origHpr + (targetHpr - origHpr) * t
-                self.cameraNode.setHpr(newHpr)
-                self.camera_momentum+=dt*3
-                
-        if self.camera_momentum>10.0:
-            self.camera_momentum=10.0            
-        #rotate camera  
-        if self.keyMap["key_cam_right"]:    
-            self.cameraNode.setH(self.cameraNode, -70*dt* self.camera_momentum)
-            self.camera_momentum+=dt*3
-        elif self.keyMap["key_cam_left"]:        
-            self.cameraNode.setH(self.cameraNode, 70*dt* self.camera_momentum)
-            self.camera_momentum+=dt*3
-        else:
-            self.camera_momentum=0          
-            
-        if self.HP<=0:
-            return task.again        
-        
         self.common['traverser'].traverse(render) 
         hit_wall=False 
         self.canTeleport=False   
@@ -2227,50 +2014,8 @@ class PC4(Player):
         if anim=="attack" or anim=="hit" or anim=="block":
             self.sounds["walk"].stop()
             return task.cont             
-        
-        #move         
-        self.lastPos=self.node.getPos(render) 
-        if self.keyMap["key_forward"]: 
-            self.isIdle=False
-            self.node.setFluidY(self.node, dt*2)
-            self.actor.setPlayRate(1, "walk") 
-            if(self.actor.getCurrentAnim()!="walk"):
-                self.actor.loop("walk")
-                if self.sounds["walk"].status() != self.sounds["walk"].PLAYING:
-                    self.sounds["walk"].play()
-            if self.keyMap["key_right"]:
-                self.node.setFluidX(self.node, dt*1)
-            if self.keyMap["key_left"]:            
-                self.node.setFluidX(self.node, -dt*1)
-        elif self.keyMap["key_right"]: 
-            self.isIdle=False
-            self.node.setFluidX(self.node, dt*2)
-            self.actor.setPlayRate(-2, "strafe") 
-            if(self.actor.getCurrentAnim()!="strafe"):
-                self.actor.loop("strafe")
-        elif self.keyMap["key_left"]:  
-            self.isIdle=False
-            self.node.setFluidX(self.node, -dt*2)
-            self.actor.setPlayRate(2, "strafe") 
-            if(self.actor.getCurrentAnim()!="strafe"):
-                self.actor.loop("strafe")                
-        elif self.keyMap["key_back"]:  
-            self.isIdle=False
-            self.node.setFluidY(self.node, -dt*2)
-            self.actor.setPlayRate(-1, "walk") 
-            if(self.actor.getCurrentAnim()!="walk"):
-                self.actor.loop("walk") 
-            if self.sounds["walk"].status() != self.sounds["walk"].PLAYING:
-                self.sounds["walk"].play()    
-        else:
-            self.isIdle=True
-                
-        if self.isIdle:            
-            self.sounds["walk"].stop()
-            if(self.actor.getCurrentAnim()!="idle"):
-                self.actor.loop("idle")  
-                
-        return task.cont        
+
+        return super().update(task)      
      
     def destroy(self): 
         if taskMgr.hasTaskNamed("teleport_task"):
