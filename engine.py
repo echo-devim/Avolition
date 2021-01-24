@@ -392,7 +392,6 @@ class Monster():
         Sequence(Wait(next), Func(self.attack, pattern)).start()
 
     def onHit(self, damage, sound="hit", weapon=None):
-        print("HIT BY " + weapon)
         if self.state=="DIE":
             return
 

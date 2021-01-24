@@ -605,7 +605,23 @@ class Player(DirectObject):
         #self.keyMap["s"]=False
         #self.keyMap["a"]=False
         #self.keyMap["d"]=False
-        
+
+    #TODO: Move into a shared utility class
+    def showLabel(self, message):
+        text = TextNode('onscreenmessage')
+        text.setText(message)
+        text.setFont(loader.loadFont('Bitter-Bold.otf'))
+        self.message = aspect2d.attachNewNode(text)
+        self.message.setScale(0.05)
+        window = base.win.getProperties()
+        windowX = window.getXSize()
+        windowY = window.getYSize()
+        self.message.setPos(-0.6,0,-0.8)
+
+    def die(self, task):
+        self.destroy()
+        return task.done
+
     def zoom_control(self, amount):
         LerpFunc(self.zoom,fromData=0,toData=amount, duration=.5, blendType='easeOut').start()
         
@@ -613,6 +629,11 @@ class Player(DirectObject):
         dt = globalClock.getDt()
         self.cameraNode.setPos(self.node.getPos(render))  
         
+        if self.HP <= 0:
+            self.showLabel("Game over")
+            taskMgr.doMethodLater(5.0, self.die,'die_task')
+            return task.done
+
         #auto camera:
         if self.autoCamera and not self.pauseCamera and not self.isOptionsOpen:
             origHpr = self.cameraNode.getHpr()
@@ -753,7 +774,10 @@ class Player(DirectObject):
         if taskMgr.hasTaskNamed("mousePosTask"):
             taskMgr.remove("mousePosTask")
         if taskMgr.hasTaskNamed("updatePC"):
-            taskMgr.remove("updatePC")    
+            taskMgr.remove("updatePC")
+        if taskMgr.hasTaskNamed("die_task"):
+            taskMgr.remove("die_task")
+        self.message.removeNode()
         self.healthFrame.destroy()
         self.healthBar.destroy()
         self.cursor.destroy()
@@ -2037,10 +2061,10 @@ class Wizard(Player):
         for magma in self.magmaList:
             self.magmaRemove(magma)
         
-        self.common['traverser'].removeCollider(self.attack_ray)        
+        #self.common['traverser'].removeCollider(self.attack_ray)        
 
         self.coll_ray.removeNode()
         self.coll_sphere.removeNode()
-        self.attack_ray.removeNode()        
+        #self.attack_ray.removeNode()        
         super().destroy()
                 
