@@ -3,3 +3,8 @@ Thanks to:
 wezu - Developer of the original game (https://github.com/wezu/Avolition) and all his tools for panda3d
 ricemaster - sfx effect_notify.wav creator
 dersuperanton - 'Running Loud' sfx effect creator
+3DMaesen - Boss1 Monster model (https://sketchfab.com/3d-models/monster-4cb82518b83e4176a4b131273b6294c5)
+BishalRai - Awake the beast sfx effect creator (https://freesound.org/people/BishalRai/sounds/158687/)
+Joseph SARDIN - Whoosh4 sfx effect creator (https://bigsoundbank.com/)
+Michel Baradari - explode and explodemini sfx effect creator apollo-music.de (https://opengameart.org/content/2-high-quality-explosions)
+rubberduck - 80 CC0 RPG sfx effects (https://opengameart.org/content/80-cc0-rpg-sfx)
