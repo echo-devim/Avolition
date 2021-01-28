@@ -530,6 +530,9 @@ class Player(DirectObject):
         self.armor = oldArmor
         return task.done
 
+    def getShopItems(self):
+        return shop.items
+
     def useItem(self):
         if self.selectedItem < len(self.items):
 
@@ -622,6 +625,10 @@ class Player(DirectObject):
                 self.showMenuItems()
 
                 self.moneyLabel.setText(str(self.money))
+
+    def addMoney(self, amount):
+        self.money += amount
+        self.moneyLabel.setText(str(self.money))
 
     def closeMenuItems(self):
         if self.menuitems:

@@ -135,10 +135,11 @@ class Interactive():
         return task.again
 
 class RandomObject():
-    def __init__(self, id, common, node, render):
+    def __init__(self, id, common, node, render, moneyamount=1):
         self.id = id
         self.common = common
         self.node = node
+        self.moneyamount = moneyamount
         self.object=Actor("models/object", {'rotate' : 'models/object-rotate'})
         self.object.setScale(0.20)
         self.object.setZ(1.5)
@@ -175,14 +176,20 @@ class RandomObject():
             notifysound.play()
             self.object.hide()
             self.pe.disable()
-            #The object can heal the player or increase his force
-            n = random.random()
-            if (n <= 0.7):
+            #The object can fully heal the player, give him money or give him an item
+            n = random.randrange(100)
+            if (n == 0):
                 self.common['PC'].heal()
-            else:
-                self.showLabel("Attack power temporarily increased +1")
-                self.common['PC'].attack_extra_damage += 1
+            elif (n < 5):
+                shopitems = self.common['PC'].getShopItems()
+                i = random.randrange(len(shopitems))
+                self.showLabel("You received '" + shopitems[i]['name'] + "'")
+                shopitems[i]['count'] += shopitems[i]['count'] + 1
+                self.common['PC'].items.append(shopitems[i])
+                self.common['PC'].showCurrentItem()
                 taskMgr.doMethodLater(2, self.destroyTask,'show-message')
+            else:
+                self.common['PC'].addMoney(self.moneyamount)
             return task.done
         return task.again
 
