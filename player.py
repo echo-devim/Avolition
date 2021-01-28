@@ -594,6 +594,7 @@ class Player(DirectObject):
         if i < len(self.items) and self.items[i]['count'] > 0:
             self.items[i]['count'] = self.items[i]['count'] - 1
             self.items[i]['available'] = self.items[i]['available'] + 1
+            self.common['click2'].play()
             self.money += self.items[i]['price']
             if self.items[i]['count'] == 0:
                 del self.items[i]
@@ -611,7 +612,7 @@ class Player(DirectObject):
     def buyItem(self,i):
         if len(self.items) <= self.maxItems:
             #Check if the player has enough money and the item is available
-            if self.money >= shop.items[i]['price'] and shop.items[i]['available'] > 0:
+            if self.money >= shop.items[i]['price'] and shop.items[i]['available'] > 0 and len(self.items) < self.maxItems:
                 #Check if the player already has this item
                 pitem = self.getItemIndex(shop.items[i]['name'])
                 if pitem < 0:
@@ -620,7 +621,7 @@ class Player(DirectObject):
                 shop.items[i]['count'] = shop.items[i]['count'] + 1
                 shop.items[i]['available'] = shop.items[i]['available'] - 1
                 self.money -= shop.items[i]['price']
-
+                self.common['click2'].play()
                 self.closeMenuItems()
                 self.showMenuItems()
 

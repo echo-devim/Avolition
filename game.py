@@ -193,6 +193,7 @@ class Game(DirectObject):
         self.common['soundPool']=SoundPool(self.common)
         base.sfxManagerList[0].setVolume(config_sfx.getValue()*0.01)
         self.common['click']=base.loader.loadSfx("sfx/click_stereo.ogg")
+        self.common['click2']=base.loader.loadSfx("sfx/pen-click-1.wav")
 
         #base.cTrav = CollisionTraverser()
 
