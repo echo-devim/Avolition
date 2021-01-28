@@ -182,11 +182,15 @@ class RandomObject():
             else:
                 self.showLabel("Attack power temporarily increased +1")
                 self.common['PC'].attack_extra_damage += 1
-                taskMgr.doMethodLater(2, self.destroy,'show-message')
+                taskMgr.doMethodLater(2, self.destroyTask,'show-message')
             return task.done
         return task.again
-    
-    def destroy(self, task):
+
+    def destroyTask(self, task):
+        self.destroy()
+        return task.done
+
+    def destroy(self):
         taskMgr.remove('random-object' + str(self.id))
         self.object.cleanup()
         self.object.removeNode()
@@ -194,7 +198,6 @@ class RandomObject():
         self.pe.removeNode()
         self.message.removeNode()
         self.ambientLightNode.removeNode()
-        return task.done
 
 
 class Monster():

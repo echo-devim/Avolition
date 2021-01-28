@@ -8,3 +8,6 @@ BishalRai - Awake the beast sfx effect creator (https://freesound.org/people/Bis
 Joseph SARDIN - Whoosh4 sfx effect creator (https://bigsoundbank.com/)
 Michel Baradari - explode and explodemini sfx effect creator apollo-music.de (https://opengameart.org/content/2-high-quality-explosions)
 rubberduck - 80 CC0 RPG sfx effects (https://opengameart.org/content/80-cc0-rpg-sfx)
+LudicArts - RPG handpainted icon pack (http://www.ludicarts.com)
+fireclawthefox - DirectTooltip developer (https://github.com/fireclawthefox/DirectTooltip)
+Shadow3097 - window ui frame creator (https://opengameart.org/content/window-frame)

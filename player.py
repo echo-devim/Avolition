@@ -30,6 +30,9 @@ from direct.particles.ParticleEffect import ParticleEffect
 from vfx import vfx
 from vfx import MovingVfx
 import random
+import shop
+from direct.gui import DirectGuiGlobals as DGG
+from DirectTooltip import *
 from direct.showbase.PythonUtil import fitSrcAngle2Dest
 
 class Player(DirectObject):
@@ -118,6 +121,7 @@ class Player(DirectObject):
             self.node=render.attachNewNode("pc")        
 
         self.isIdle=True
+        self.message=None
         
         #sounds                
         self.sounds={'walk':self.audio3d.loadSfx("sfx/running-loud.wav"),
@@ -233,8 +237,12 @@ class Player(DirectObject):
                         'key_cam_left': False,
                         'key_cam_right': False,
                         'key_action1': False,
-                        'key_action2': False}
+                        'key_action2': False,
+                        'key_menuitems': False}
         #prime key
+        self.accept(common['keymap']['key_menuitems'], self.showMenuItems)
+        self.accept(common['keymap']['key_useitem'], self.useItem)
+        self.accept(common['keymap']['key_nextitem'], self.nextItem)
         self.accept(common['keymap']['key_forward'][0], self.keyMap.__setitem__, ["key_forward", True])
         self.accept(common['keymap']['key_back'][0], self.keyMap.__setitem__, ["key_back", True])
         self.accept(common['keymap']['key_left'][0], self.keyMap.__setitem__, ["key_left", True])
@@ -454,8 +462,42 @@ class Player(DirectObject):
         #self.options.setPos(winX,0,-128) 
         self.optionsSet("close")
         
-        
-        
+        self.items = []
+        self.maxItems = 5
+        self.money = 10
+        coinIco = DirectLabel(image = "icon/coin.png",
+                    frameColor = (0,0,0,0),
+                    parent = aspect2d,
+                    scale = 0.035,
+                    pos = (1, 0, -0.95))
+        coinIco.setTransparency(TransparencyAttrib.MDual)
+        self.moneyLabel = DirectLabel(text = str(self.money),
+                    text_fg = (1,1,1,1),
+                    frameColor = (0,0,0,0),
+                    parent = aspect2d,
+                    text_font=self.common['font'],
+                    scale = 0.045,
+                    pos = (1.08, 0, -0.95))
+        self.menuitems = None
+
+        self.selectedItem = 0
+
+        frm = DirectFrame(frameSize=(0, 0.15, 0, 0.15),
+                        #frameColor=(0.1,0.4,0.2,0.5),
+                        frameTexture='images/frame_blue.png',
+                        pos=(0.75, 0, -0.99),
+                        relief = DGG.FLAT,
+                        parent=aspect2d)
+        self.currItemIcon = DirectLabel(relief=None, image=None,
+                pos = (0.075, 0, 0.075),
+                parent = frm,
+                scale = 0.06)
+        frm.setTransparency(TransparencyAttrib.MDual)
+        frm.setBin('fixed', 1)
+
+        self.showCurrentItem()
+        self.itemtooltip = None
+
         self.healthFrame.setPos(256+winX/2,0,-winY)
         self.healthBar.setPos(71-256+winX/2,0,7-winY)
         
@@ -490,7 +532,166 @@ class Player(DirectObject):
 
         taskMgr.add(self.__getMousePos, "mousePosTask")
         taskMgr.add(self.update, "updatePC")
+
+    def useItem(self):
+        if self.selectedItem < len(self.items):
+
+            if self.items[self.selectedItem]['name'] == "health flask":
+                self.partialHeal(20)
+            # TODO Add support to other items
+
+            #Update ui
+            self.items[self.selectedItem]['count'] = self.items[self.selectedItem]['count'] - 1
+            if (self.items[self.selectedItem]['count'] == 0):
+                del self.items[self.selectedItem]
+            if (self.selectedItem > 0):
+                self.selectedItem-=1
+
+            self.showCurrentItem()
+    
+    def nextItem(self):
+        self.selectedItem += 1
+        if (self.selectedItem) >= len(self.items):
+            self.selectedItem = 0
+        self.showCurrentItem()
+
+    def showCurrentItem(self):
+        if self.selectedItem < len(self.items):
+            self.currItemIcon.setImage(self.items[self.selectedItem]['icon'])
+        else:
+            self.currItemIcon.clearImage()
+
+    def sellItem(self,i,label):
+        # Player items are the same objects of shop
+        if i < len(self.items) and self.items[i]['count'] > 0:
+            self.items[i]['count'] = self.items[i]['count'] - 1
+            self.items[i]['available'] = self.items[i]['available'] + 1
+            self.money += self.items[i]['price']
+            if self.items[i]['count'] == 0:
+                del self.items[i]
+            # Reload items
+            self.closeMenuItems()
+            self.showMenuItems()
+            self.moneyLabel.setText(str(self.money))
+
+    def getItemIndex(self, item_name):
+        for i in range(0,len(self.items)):
+            if self.items[i]['name'] == item_name:
+                return i
+        return -1
+
+    def buyItem(self,i):
+        if len(self.items) <= self.maxItems:
+            #Check if the player has enough money and the item is available
+            if self.money >= shop.items[i]['price'] and shop.items[i]['available'] > 0:
+                #Check if the player already has this item
+                pitem = self.getItemIndex(shop.items[i]['name'])
+                if pitem < 0:
+                    self.items.append(shop.items[i])
+                    self.showCurrentItem()
+                shop.items[i]['count'] = shop.items[i]['count'] + 1
+                shop.items[i]['available'] = shop.items[i]['available'] - 1
+                self.money -= shop.items[i]['price']
+
+                self.closeMenuItems()
+                self.showMenuItems()
+
+                self.moneyLabel.setText(str(self.money))
+
+    def closeMenuItems(self):
+        if self.menuitems:
+            if self.itemtooltip:
+                self.itemtooltip.delete()
+                self.itemtooltip = None
+            self.menuitems.cleanup()
+            self.menuitems.removeNode()
+            self.menuitems = None
+
+    def showMenuItems(self):
+        if self.menuitems:
+            self.closeMenuItems()
+            return
+        # Menu Items
+        self.menuitems = DirectDialog(frameSize = (-0.7, 0.7, -0.5, 0.5),
+                                    frameTexture='images/texture_menuitems.png',
+                                   fadeScreen = 0.4,
+                                   relief = DGG.FLAT)
+        self.menuitems.setTransparency(TransparencyAttrib.MDual)
+        self.menuitems.setBin('fixed', 1)
+        #self.menuitems.hide()
+        DirectLabel(text = "Your Items:",
+                    text_fg = (1,1,1,1),
+                    frameColor = (0,0,0,0),
+                    parent = self.menuitems,
+                    text_font=self.common['font'],
+                    scale = 0.05,
+                    pos = (-0.5, 0, 0.45))
         
+        for i in range(0,self.maxItems):
+            frm = DirectFrame(frameSize=(0, 0.2, 0, 0.2),
+                            frameColor=(1,1,1,0.2),
+                            pos=(-0.6 + (0.25*i), 0, 0.2),
+                            relief = DGG.RAISED,
+                            parent=self.menuitems)
+            if i < len(self.items):
+                label = DirectLabel(text = "P: " + str(self.items[i]['price']) + ", Q: " + str(self.items[i]['count']),
+                            text_fg = (1,1,1,1),
+                            frameColor = (0,0,0,0),
+                            parent = frm,
+                            text_font=self.common['font'],
+                            scale = 0.035,
+                            pos = (0.1, 0, 0.02))
+                btn = DirectButton(relief=None, image=self.items[i]['icon'],
+                        command = self.sellItem, extraArgs=[i, label],
+                        pos = (0.1, 0, 0.12),
+                        parent = frm,
+                        scale = 0.07)
+                btn.bind(DGG.ENTER, self.showTooltip, [self.items[i]['description']])
+                btn.bind(DGG.EXIT, self.deleteTooltip)
+
+        DirectLabel(text = "Shop:",
+                    text_fg = (1,1,1,1),
+                    frameColor = (0,0,0,0),
+                    parent = self.menuitems,
+                    text_font=self.common['font'],
+                    scale = 0.05,
+                    pos = (-0.55, 0, 0.1))
+
+        cols=2  #Columns for available items
+        for y in range(0,cols):
+            for i in range(0,int(len(shop.items)/cols)):
+                j = (i+y*self.maxItems)
+                bgcolor = (1,1,1,0.2)
+                if shop.items[j]['available'] == 0 or self.money < shop.items[j]['price']:
+                    bgcolor = (0.8,0.3,0.3,0.5)
+                frm = DirectFrame(frameSize=(0, 0.2, 0, 0.2),
+                                frameColor=bgcolor,
+                                pos=(-0.6 + (0.25*i), 0, -0.15 - (0.25*y)),
+                                relief = DGG.RAISED,
+                                parent=self.menuitems)
+                btn = DirectButton(relief=None, image=shop.items[j]['icon'],
+                        command = self.buyItem, extraArgs=[j],
+                        pos = (0.1, 0, 0.12),
+                        parent = frm,
+                        scale = 0.07)
+                DirectLabel(text = "P: " + str(shop.items[j]['price']) + ", Q: " + str(shop.items[j]['available']),
+                            text_fg = (1,1,1,1),
+                            frameColor = (0,0,0,0),
+                            parent = frm,
+                            text_font=self.common['font'],
+                            scale = 0.035,
+                            pos = (0.1, 0, 0.02))
+                btn.bind(DGG.ENTER, self.showTooltip, [shop.items[j]['description']])
+                btn.bind(DGG.EXIT, self.deleteTooltip)
+
+    def showTooltip(self,text, args=None):
+        self.itemtooltip = DirectTooltip()
+        self.itemtooltip.show(text)
+
+    def deleteTooltip(self, args=None):
+        self.itemtooltip.delete()
+
+
     def optionsSet(self, opt, event=None):
         if opt!="close" and opt!="audio" and opt!="music":
             self.common['click'].play()
@@ -559,7 +760,18 @@ class Player(DirectObject):
         self.healthBar.setScale(10,1, 1)        
         self.healthBar['frameColor']=(0, 1, 0, 1)
         self.HP=self.MaxHP
-        
+
+    def partialHeal(self, amount):
+        self.sounds["heal"].play()
+        vfx(self.node, texture='vfx/vfx3.png', scale=.8, Z=1.0, depthTest=False, depthWrite=False).start(0.03)                         
+        self.HP+=amount
+        print(str(self.HP) + " amount=" + str(amount))
+        if (self.HP > self.MaxHP):
+            self.HP = self.MaxHP
+        self.healthBar.setScale(10*self.HP/self.MaxHP,1, 1)
+        green=self.HP/self.MaxHP
+        self.healthBar['frameColor']=(1-green, green, 0, 1)
+
     def zoom(self, t):
         Z=base.camera.getY(self.cameraNode)
         #print Z
@@ -610,7 +822,7 @@ class Player(DirectObject):
     def showLabel(self, message):
         text = TextNode('onscreenmessage')
         text.setText(message)
-        text.setFont(loader.loadFont('Bitter-Bold.otf'))
+        text.setFont(self.common['font'])
         self.message = aspect2d.attachNewNode(text)
         self.message.setScale(0.05)
         window = base.win.getProperties()
@@ -777,7 +989,8 @@ class Player(DirectObject):
             taskMgr.remove("updatePC")
         if taskMgr.hasTaskNamed("die_task"):
             taskMgr.remove("die_task")
-        self.message.removeNode()
+        if self.message:
+            self.message.removeNode()
         self.healthFrame.destroy()
         self.healthBar.destroy()
         self.cursor.destroy()
@@ -855,8 +1068,8 @@ class Knight(Player):
         self.actor.setBin("opaque", 10)
         
         self.shieldUp=0
-        self.HP=50.0+float(self.common['pc_stat1'])
-        self.MaxHP=50.0+float(self.common['pc_stat1'])
+        self.HP=130 #50.0+float(self.common['pc_stat1'])
+        self.MaxHP=130 #50.0+float(self.common['pc_stat1'])
         self.HPregen=round((101-self.common['pc_stat1'])/100.0, 1)
         self.blockPower=(50+(self.common['pc_stat2']+1)/2)/100.0
         self.speed=(75+(101-self.common['pc_stat2'])/2)/100.0
@@ -1145,21 +1358,17 @@ class Witch(Player):
         self.hitMonsters=set()
         
     def plasma_dmg(self, power):
-        print("plasma_dmg called")
         #print power
         final=(power+5)*self.power_progress+((power+5)*(power+5)/15.0) *(1.0-self.power_progress)
         return (self.plasma_amp*final)+self.attack_extra_damage
 
     def plasma_attack(self, power=1):       
-        print("plasma_attack called")
         #self.attack_ray.node().setFromCollideMask(BitMask32.allOff())   
         if self.hitMonsters:
-            print("HIT " + str(len(self.hitMonsters)))
             for monster in self.hitMonsters:
                 if monster:
                     monster=self.monster_list[int(monster)]
                     if monster:
-                        print("calling onHit for plasma")
                         monster.onHit(2*self.plasma_dmg(power), weapon="plasma")                        
         self.hitMonsters=set()
     
@@ -1770,8 +1979,8 @@ class Wizard(Player):
         self.aura.loop(0.02)
         self.powerUp=0
         self.teleportUp=0
-        self.HP=40.0
-        self.MaxHP=40.0
+        self.HP=70.0
+        self.MaxHP=70.0
         
         self.baseDamage=(50.0+self.common['pc_stat1'])/100.0
         self.maxMagma=1+int((100-self.common['pc_stat1'])/20)

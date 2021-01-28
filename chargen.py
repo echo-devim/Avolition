@@ -38,6 +38,7 @@ class CharGen(DirectObject):
         self.load()        
     def load(self):  
         self.font = loader.loadFont('Bitter-Bold.otf')
+        self.common['font']=self.font
         self.currentLevel=0
         
         self.common['pc_stat1']=50

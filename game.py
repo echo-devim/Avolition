@@ -61,6 +61,9 @@ config_music=ConfigVariableInt('music-volume', '30')
 config_sfx=ConfigVariableInt('sound-volume', '100')
 config_safemode=ConfigVariableBool('safemode', 0)
 #keys
+config_menuitems=ConfigVariableString('key_menuitems', 'v')
+config_useitem=ConfigVariableString('key_useitem', 'u')
+config_nextitem=ConfigVariableString('key_nextitem', 'i')
 config_forward=ConfigVariableString('key_forward', 'w|arrow_up')
 config_back=ConfigVariableString('key_back', 's|arrow_down')
 config_left=ConfigVariableString('key_left', 'a|arrow_left')
@@ -142,6 +145,9 @@ class Game(DirectObject):
         #print self.common['safemode']
         #keys
         self.common['keymap']={}
+        self.common['keymap']['key_menuitems']=config_menuitems.getValue()
+        self.common['keymap']['key_useitem']=config_useitem.getValue()
+        self.common['keymap']['key_nextitem']=config_nextitem.getValue()
         self.common['keymap']['key_forward']=config_forward.getValue().split('|')
         self.common['keymap']['key_back']=config_back.getValue().split('|')
         self.common['keymap']['key_left']=config_left.getValue().split('|')
