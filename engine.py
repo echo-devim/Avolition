@@ -502,9 +502,7 @@ class Monster():
             #self.actor.play("die")
             self.common["kills"]-=1
             if self.common["kills"]==0:
-                Interactive(self.common, data.items['key'], self.node.getPos(render))                    
-            elif random.randrange(10)==0:
-                Interactive(self.common, data.items['potion'], self.node.getPos(render))                 
+                Interactive(self.common, data.items['key'], self.node.getPos(render))               
             Sequence(Wait(2.0),LerpPosInterval(self.node, 2.0, VBase3(self.node.getX(),self.node.getY(),self.node.getZ()-5)),Func(self.destroy)).start()
             return task.done
         elif self.state=="STOP":
