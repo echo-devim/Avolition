@@ -144,15 +144,6 @@ class Player(DirectObject):
         self.sounds['walk'].setLoop(True)       
         for sound in self.sounds:
             self.audio3d.attachSoundToObject(self.sounds[sound], self.node)
-        
-        
-        #Ring around player
-        #self.HPring=Actor("models/ring_morph", {'anim' : 'models/ring_anim'})
-        #self.HPring.setScale(0.07)
-        #self.HPring.setZ(0.4)
-        #self.HPring.setLightOff()
-        #self.HPring.reparentTo(self.node)
-        #self.HPring.show()
 
         #camera
         self.cameraNode  = render.attachNewNode("cameraNode")         
@@ -176,7 +167,7 @@ class Player(DirectObject):
         self.pLight.setColor(VBase4(.9, .9, 1.0, 1))
         #self.pLight.setColor(VBase4(.7, .7, .8, 1))
         #self.pLight.setAttenuation(Point3(3, 0, 0)) 
-        self.pLight.setAttenuation(Point3(2, 0, 0.5))         
+        self.pLight.setAttenuation(Point3(8, 0, 0.5))
         self.pLightNode = render.attachNewNode(self.pLight) 
         #self.pLightNode.setZ(3.0)
         render.setLight(self.pLightNode)
@@ -309,6 +300,7 @@ class Player(DirectObject):
         self.attack_extra_damage=0
         self.powerUp=0
         self.speed=.8
+        self.crit_hit=0
         self.actionLock=0
         self.hitMonsters=set()
         self.myWaypoints=[]
@@ -464,7 +456,8 @@ class Player(DirectObject):
         
         self.items = []
         self.maxItems = 5
-        self.money = 10
+        self.money = 500
+        self.armor = 0
         coinIco = DirectLabel(image = "icon/coin.png",
                     frameColor = (0,0,0,0),
                     parent = aspect2d,
@@ -533,12 +526,44 @@ class Player(DirectObject):
         taskMgr.add(self.__getMousePos, "mousePosTask")
         taskMgr.add(self.update, "updatePC")
 
+    def resetArmor(self, oldArmor, task):
+        self.armor = oldArmor
+        return task.done
+
     def useItem(self):
         if self.selectedItem < len(self.items):
 
             if self.items[self.selectedItem]['name'] == "health flask":
                 self.partialHeal(20)
-            # TODO Add support to other items
+            elif self.items[self.selectedItem]['name'] == "armor flask":
+                self.armor += 0.1
+            elif self.items[self.selectedItem]['name'] == "attack boost":
+                self.attack_extra_damage += 1
+            elif self.items[self.selectedItem]['name'] == "great attack boost":
+                self.attack_extra_damage += 3
+            elif self.items[self.selectedItem]['name'] == "torch":
+                self.pLight.setAttenuation(Point3(1, 0, 0.5))
+            elif self.items[self.selectedItem]['name'] == "boots":
+                self.speed += 0.1
+            elif self.items[self.selectedItem]['name'] == "items boost":
+                self.common["random-objects-freq"] += 0.1
+            elif self.items[self.selectedItem]['name'] == "critical damage":
+                self.crit_hit += 0.1
+            elif self.items[self.selectedItem]['name'] == "invincible ring":
+                oldArmor = self.armor
+                self.armor = 1
+                taskMgr.doMethodLater(15.0, self.resetArmor,'reset armor', extraArgs=[oldArmor], appendTask=True)
+            elif self.items[self.selectedItem]['name'] == "health boost":
+                #Ring around player
+                self.HPring=Actor("models/ring_morph", {'anim' : 'models/ring_anim'})
+                self.HPring.setScale(0.07)
+                self.HPring.setColorScale(0,0.9,0.1,0.9)
+                self.HPring.setZ(0)
+                self.HPring.setLightOff()
+                self.HPring.reparentTo(self.node)
+                self.HPring.show()
+                self.regenCount = 30
+                taskMgr.doMethodLater(1.0, self.regenerate,'regenerate_task')
 
             #Update ui
             self.items[self.selectedItem]['count'] = self.items[self.selectedItem]['count'] - 1
@@ -662,7 +687,7 @@ class Player(DirectObject):
             for i in range(0,int(len(shop.items)/cols)):
                 j = (i+y*self.maxItems)
                 bgcolor = (1,1,1,0.2)
-                if shop.items[j]['available'] == 0 or self.money < shop.items[j]['price']:
+                if shop.items[j]['available'] == 0 or self.money < shop.items[j]['price'] or len(self.items) == self.maxItems:
                     bgcolor = (0.8,0.3,0.3,0.5)
                 frm = DirectFrame(frameSize=(0, 0.2, 0, 0.2),
                                 frameColor=bgcolor,
@@ -691,6 +716,22 @@ class Player(DirectObject):
     def deleteTooltip(self, args=None):
         self.itemtooltip.delete()
 
+
+    def regenerate(self, task):
+        if self.regenCount <= 0:
+            self.HPring.cleanup()
+            self.HPring.removeNode()
+            return task.done
+        else:
+            self.regenCount -= 1
+
+
+        if self.MaxHP>self.HP>0:
+            self.HP+=1
+            self.healthBar.setScale(10*self.HP/self.MaxHP,1, 1)
+            green=self.HP/self.MaxHP
+            self.healthBar['frameColor']=(1-green, green, 0, 1)
+        return task.again
 
     def optionsSet(self, opt, event=None):
         if opt!="close" and opt!="audio" and opt!="music":
@@ -765,7 +806,6 @@ class Player(DirectObject):
         self.sounds["heal"].play()
         vfx(self.node, texture='vfx/vfx3.png', scale=.8, Z=1.0, depthTest=False, depthWrite=False).start(0.03)                         
         self.HP+=amount
-        print(str(self.HP) + " amount=" + str(amount))
         if (self.HP > self.MaxHP):
             self.HP = self.MaxHP
         self.healthBar.setScale(10*self.HP/self.MaxHP,1, 1)
@@ -785,13 +825,16 @@ class Player(DirectObject):
         
     def hit(self, damage):
         #print "hit"
+        damage=damage*(1-self.armor)
+        #print damage
+        if damage<0:
+            damage=0  
+
         if  self.isBlockin:
             #print damage,
             self.sounds[random.choice(["block1", "block2"])].play()
-            damage=damage*(1-self.blockPower)              
-            #print damage
-            if damage<0:
-                damage=0                
+            if damage > 0:
+                damage = damage/(1+self.armor)
         else:
             self.sounds[random.choice(["pain1", "pain2"])].play()
             vfx(self.node, texture='vfx/blood_red.png', scale=.3, Z=1.0, depthTest=True, depthWrite=True).start(0.016)                         
@@ -982,7 +1025,8 @@ class Player(DirectObject):
                 
     def destroy(self): 
         self.common['levelLoader'].unload(True)      
-    
+        if taskMgr.hasTaskNamed("regenerate_task"):
+            taskMgr.remove("regenerate_task")
         if taskMgr.hasTaskNamed("mousePosTask"):
             taskMgr.remove("mousePosTask")
         if taskMgr.hasTaskNamed("updatePC"):
@@ -1002,6 +1046,8 @@ class Player(DirectObject):
         self.options_slider1.destroy()
         self.options_slider2.destroy()
         
+        self.currItemIcon.removeNode()
+        self.closeMenuItems()
         self.actor.cleanup() 
         render.setLightOff()
         self.ignoreAll()
@@ -1030,7 +1076,7 @@ class Player(DirectObject):
         self.hitMonsters=None
         self.myWaypoints=None
         self.HP=None
-        self.blockPower=None 
+        self.armor=0 
         self.cursorPowerUV=None
         self.cursorPowerUV2=None
         self.isBlockin=None
@@ -1068,10 +1114,10 @@ class Knight(Player):
         self.actor.setBin("opaque", 10)
         
         self.shieldUp=0
-        self.HP=130 #50.0+float(self.common['pc_stat1'])
-        self.MaxHP=130 #50.0+float(self.common['pc_stat1'])
+        self.HP=60 #50.0+float(self.common['pc_stat1'])
+        self.MaxHP=60 #50.0+float(self.common['pc_stat1'])
         self.HPregen=round((101-self.common['pc_stat1'])/100.0, 1)
-        self.blockPower=(50+(self.common['pc_stat2']+1)/2)/100.0
+        self.armor=0.3
         self.speed=(75+(101-self.common['pc_stat2'])/2)/100.0
         self.actor.setPlayRate(self.speed, "walk")
         self.baseDamage=(1.0+self.common['pc_stat3']/50.0)
@@ -1093,7 +1139,7 @@ class Knight(Player):
            
         taskMgr.doMethodLater(0.05, self.shield_task,'shield_task')
         taskMgr.doMethodLater(0.05, self.sword_task,'sword_task')
-        taskMgr.doMethodLater(1.0, self.regenerate,'regenerate_task')
+        #taskMgr.doMethodLater(1.0, self.regenerate,'regenerate_task')
 
     def attack(self, power=1):       
         self.attack_ray.node().setFromCollideMask(BitMask32.allOff())   
@@ -1111,14 +1157,6 @@ class Knight(Player):
            
     def unBlock(self):
         self.isBlockin=False
-
-    def regenerate(self, task):
-        if self.MaxHP>self.HP>0:
-            self.HP+=self.HPregen
-            self.healthBar.setScale(10*self.HP/self.MaxHP,1, 1)
-            green=self.HP/self.MaxHP
-            self.healthBar['frameColor']=(1-green, green, 0, 1)
-        return task.again
 
     def update(self, task):
         self.common['traverser'].traverse(render) 
@@ -1218,8 +1256,6 @@ class Knight(Player):
             taskMgr.remove("shield_task")
         if taskMgr.hasTaskNamed("sword_task"):
             taskMgr.remove("sword_task")
-        if taskMgr.hasTaskNamed("regenerate_task"):
-            taskMgr.remove("regenerate_task")
         super().destroy()
         self.common['traverser'].removeCollider(self.attack_ray)
         self.attack_ray.removeNode()
@@ -1268,9 +1304,8 @@ class Witch(Player):
         
         self.sounds['plasma_fly'].setLoop(True)
         
-        self.MaxHP=100.0
-        self.HP=100.0
-        self.blockPower=0.9    
+        self.MaxHP=50.0
+        self.HP=50.0
         self.blast_size=(self.common['pc_stat1']+50)/100.0
         self.plasma_amp=(75+(101-self.common['pc_stat1'])/2)/100.0
         self.spark_a=(self.common['pc_stat2']-50)/50.0
@@ -1641,8 +1676,8 @@ class Archer(Player):
             self.audio3d.attachSoundToObject(self.sounds[sound], self.node)
         
 
-        self.HP=70.0
-        self.MaxHP=70.0
+        self.HP=55.0
+        self.MaxHP=55.0
         self.runUp=0
         self.powerUp=0
         self.barbChance=int(self.common['pc_stat1']/2)    #x 100%        
@@ -1703,7 +1738,7 @@ class Archer(Player):
                 #print "barb!"
                 barb=True
                 Sequence(Wait(0.2), Func(monster.onHit, damage, None)).start()  
-            if crit_roll+power>self.critChance:    
+            if crit_roll+power+self.crit_hit>self.critChance:    
                 #print "critical:", crit_roll
                 effect_roll=random.randrange(0, 101)
                 if effect_roll>=self.bleedSlowRatio:
@@ -1979,8 +2014,8 @@ class Wizard(Player):
         self.aura.loop(0.02)
         self.powerUp=0
         self.teleportUp=0
-        self.HP=70.0
-        self.MaxHP=70.0
+        self.HP=50.0
+        self.MaxHP=50.0
         
         self.baseDamage=(50.0+self.common['pc_stat1'])/100.0
         self.maxMagma=1+int((100-self.common['pc_stat1'])/20)

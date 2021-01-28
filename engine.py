@@ -325,7 +325,7 @@ class Monster():
         taskMgr.doMethodLater(1.0, self.damageOverTime,'DOTfor'+str(self.id))    
 
     def die(self, soundname):
-        if random.random() < 0.35:
+        if random.random() < self.common["random-objects-freq"]:
             id = len(self.common["random-objects"])
             object = RandomObject(id, self.common, self.node, render)
             self.common["random-objects"].append(object)

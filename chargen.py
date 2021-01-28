@@ -63,7 +63,8 @@ class CharGen(DirectObject):
         #self.common['music'].setLoop(True)
         #self.common['music'].play()        
         
-        
+        self.common["random-objects-freq"] = 0.35
+
         self.node=render.attachNewNode("node")
         
         self.cameraNode  = self.node.attachNewNode("cameraNode")         
