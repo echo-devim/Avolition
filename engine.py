@@ -139,6 +139,7 @@ class RandomObject():
         self.id = id
         self.common = common
         self.node = node
+        self.message = None
         self.moneyamount = moneyamount
         self.object=Actor("models/object", {'rotate' : 'models/object-rotate'})
         self.object.setScale(0.20)
@@ -203,7 +204,8 @@ class RandomObject():
         self.object.removeNode()
         self.pe.cleanup()
         self.pe.removeNode()
-        self.message.removeNode()
+        if self.message:
+            self.message.removeNode()
         self.ambientLightNode.removeNode()
 
 
@@ -332,7 +334,8 @@ class Monster():
         taskMgr.doMethodLater(1.0, self.damageOverTime,'DOTfor'+str(self.id))    
 
     def die(self, soundname):
-        if random.random() < self.common["random-objects-freq"]:
+        n = random.random()
+        if n < self.common["random-objects-freq"]:
             id = len(self.common["random-objects"])
             object = RandomObject(id, self.common, self.node, render)
             self.common["random-objects"].append(object)
@@ -573,6 +576,7 @@ class Monster():
         self.monsterList[self.id]=None
         self.traverser=None
         self.queue=None
+        self.healthBar.removeNode()
         #base.sfxManagerList[0].update()
         #print  " list, ALL DONE!"
         #print self.common['monsterList']

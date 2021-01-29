@@ -63,7 +63,7 @@ class CharGen(DirectObject):
         #self.common['music'].setLoop(True)
         #self.common['music'].play()        
         
-        self.common["random-objects-freq"] = 0.35
+        self.common["random-objects-freq"] = 0.45
 
         self.node=render.attachNewNode("node")
         
@@ -409,7 +409,7 @@ class CharGen(DirectObject):
         self.button2B.bind(DGG.WITHOUT, self.GUIOnExit)
         self.button3B.bind(DGG.WITHIN, self.GUIOnEnter, ["3B"]) 
         self.button3B.bind(DGG.WITHOUT, self.GUIOnExit)
-        
+
         #tooltip
         
         #self.font.setPixelsPerUnit(16)

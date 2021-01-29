@@ -456,7 +456,7 @@ class Player(DirectObject):
         
         self.items = []
         self.maxItems = 5
-        self.money = 500
+        self.money = 0
         self.armor = 0
         coinIco = DirectLabel(image = "icon/coin.png",
                     frameColor = (0,0,0,0),
@@ -469,7 +469,7 @@ class Player(DirectObject):
                     frameColor = (0,0,0,0),
                     parent = aspect2d,
                     text_font=self.common['font'],
-                    scale = 0.045,
+                    text_scale = 0.045,
                     pos = (1.08, 0, -0.95))
         self.menuitems = None
 
@@ -657,7 +657,7 @@ class Player(DirectObject):
                     frameColor = (0,0,0,0),
                     parent = self.menuitems,
                     text_font=self.common['font'],
-                    scale = 0.05,
+                    text_scale = 0.05,
                     pos = (-0.5, 0, 0.45))
         
         for i in range(0,self.maxItems):
@@ -672,7 +672,7 @@ class Player(DirectObject):
                             frameColor = (0,0,0,0),
                             parent = frm,
                             text_font=self.common['font'],
-                            scale = 0.035,
+                            text_scale = 0.035,
                             pos = (0.1, 0, 0.02))
                 btn = DirectButton(relief=None, image=self.items[i]['icon'],
                         command = self.sellItem, extraArgs=[i, label],
@@ -687,7 +687,7 @@ class Player(DirectObject):
                     frameColor = (0,0,0,0),
                     parent = self.menuitems,
                     text_font=self.common['font'],
-                    scale = 0.05,
+                    text_scale = 0.05,
                     pos = (-0.55, 0, 0.1))
 
         cols=2  #Columns for available items
@@ -712,7 +712,7 @@ class Player(DirectObject):
                             frameColor = (0,0,0,0),
                             parent = frm,
                             text_font=self.common['font'],
-                            scale = 0.035,
+                            text_scale = 0.035,
                             pos = (0.1, 0, 0.02))
                 btn.bind(DGG.ENTER, self.showTooltip, [shop.items[j]['description']])
                 btn.bind(DGG.EXIT, self.deleteTooltip)
@@ -892,9 +892,7 @@ class Player(DirectObject):
         dt = globalClock.getDt()
         self.cameraNode.setPos(self.node.getPos(render))  
         
-        if self.HP <= 0:
-            self.showLabel("Game over")
-            taskMgr.doMethodLater(5.0, self.die,'die_task')
+        if self.checkGameOver():
             return task.done
 
         #auto camera:
@@ -994,7 +992,15 @@ class Player(DirectObject):
                 self.actor.loop("idle")  
                 
         return task.cont        
-        
+
+    def checkGameOver(self):
+        if self.HP <= 0:
+            self.showLabel("Game over")
+            taskMgr.doMethodLater(5.0, self.die,'die_task')
+            return True
+        else:
+            return False
+
     def __getMousePos(self, task):
         if base.mouseWatcherNode.hasMouse():
             mpos = base.mouseWatcherNode.getMouse()
@@ -1031,7 +1037,7 @@ class Player(DirectObject):
             else:
                 self.options.setPos(210+winX,0,-128+84) 
                 
-    def destroy(self): 
+    def destroy(self):
         self.common['levelLoader'].unload(True)      
         if taskMgr.hasTaskNamed("regenerate_task"):
             taskMgr.remove("regenerate_task")
@@ -1122,8 +1128,8 @@ class Knight(Player):
         self.actor.setBin("opaque", 10)
         
         self.shieldUp=0
-        self.HP=60 #50.0+float(self.common['pc_stat1'])
-        self.MaxHP=60 #50.0+float(self.common['pc_stat1'])
+        self.HP=75 #50.0+float(self.common['pc_stat1'])
+        self.MaxHP=75 #50.0+float(self.common['pc_stat1'])
         self.HPregen=round((101-self.common['pc_stat1'])/100.0, 1)
         self.armor=0.3
         self.speed=(75+(101-self.common['pc_stat2'])/2)/100.0
@@ -1145,7 +1151,7 @@ class Knight(Player):
         #self.traverser.addCollider(self.attack_ray, self.queue)
         self.common['traverser'].addCollider(self.attack_ray, self.common['queue'])
            
-        taskMgr.doMethodLater(0.05, self.shield_task,'shield_task')
+        taskMgr.doMethodLater(0.10, self.shield_task,'shield_task')
         taskMgr.doMethodLater(0.05, self.sword_task,'sword_task')
         #taskMgr.doMethodLater(1.0, self.regenerate,'regenerate_task')
 
@@ -1167,6 +1173,8 @@ class Knight(Player):
         self.isBlockin=False
 
     def update(self, task):
+        if self.checkGameOver():
+            return task.done
         self.common['traverser'].traverse(render) 
         hit_wall=False        
         self.myWaypoints=[]
@@ -1244,7 +1252,7 @@ class Knight(Player):
             self.cursorPowerUV2[0]+=0.25
             if self.cursorPowerUV2[0]>0.75:
                 self.cursorPowerUV2[0]=0
-                self.cursorPowerUV2[1]+=-0.25            
+                self.cursorPowerUV2[1]+=-0.25
             self.cursorPower2.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV2[0], self.cursorPowerUV2[1]) 
         else:            
             self.isBlockin=False
@@ -1385,7 +1393,7 @@ class Witch(Player):
 
     
     def spark_dmg(self, power, distance):
-        pow=(8.0*self.power_progress+power*(1.0-self.power_progress))/2.0
+        pow=(7.0*self.power_progress+power*(1.0-self.power_progress))/2.0
         #print pow
         return self.attack_extra_damage+(pow*int(distance*self.spark_a-self.spark_b)/6.0)
     def spark_attack(self, power=1):       
@@ -1397,7 +1405,7 @@ class Witch(Player):
                     monster=self.monster_list[int(monster)]
                     if monster:
                         dist=self.node.getDistance(monster.node)                           
-                        monster.onHit(self.spark_dmg(power, dist), weapon="spark")
+                        monster.onHit(self.spark_dmg(power, dist), sound=None, weapon="spark")
         self.hitMonsters=set()
         
     def plasma_dmg(self, power):
@@ -1412,7 +1420,7 @@ class Witch(Player):
                 if monster:
                     monster=self.monster_list[int(monster)]
                     if monster:
-                        monster.onHit(2*self.plasma_dmg(power), weapon="plasma")                        
+                        monster.onHit(self.plasma_dmg(power), sound=None, weapon="plasma")                        
         self.hitMonsters=set()
     
     def end_boom(self):
@@ -1464,7 +1472,7 @@ class Witch(Player):
                     if abs(self.cameraNode.getH()-self.node.getH())>90.0:
                         reset_pos=self.lastPos3d                                   
                         Sequence(LerpHprInterval(self.cameraNode, 0.2, self.node.getHpr()),Func(self.resetPointer,reset_pos)).start()                
-                self.plasma_vfx.show()                
+                self.plasma_vfx.show()
                 self.plasma_vfx.loop(0.015) 
                 self.sounds['plasma_charge'].play()
             if self.powerUp>=15:
@@ -1573,6 +1581,8 @@ class Witch(Player):
         return task.again
      
     def update(self, task):
+        if self.checkGameOver():
+            return task.done
         dt = globalClock.getDt()
         self.common['traverser'].traverse(render)
 
@@ -1906,6 +1916,8 @@ class Archer(Player):
 
     def update(self, task):
         dt = globalClock.getDt()
+        if self.checkGameOver():
+            return task.done
         #arrows
         newArrowsArray = []
         for arrow in self.arrows:
@@ -2079,7 +2091,7 @@ class Wizard(Player):
                 if monster and self.monster_list:
                     monster=self.monster_list[int(monster)]
                     if monster:
-                        Sequence(Wait(random.uniform(0.0, 0.2)), Func(monster.onHit, damage=0, weapon="magma")).start()
+                        Sequence(Wait(random.uniform(0.0, 0.2)), Func(monster.onHit, damage=0, sound=None, weapon="magma")).start()
         if self.playerHit:
             if self.HP<=0:
                 return task.done
@@ -2240,6 +2252,8 @@ class Wizard(Player):
         return task.again
         
     def update(self, task):
+        if self.checkGameOver():
+            return task.done
         self.common['traverser'].traverse(render) 
         hit_wall=False 
         self.canTeleport=False   

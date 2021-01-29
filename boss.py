@@ -16,8 +16,8 @@ class Boss():
         id=len(common['monsterList'])-1
         self.id=id
         self.stats={"speed":9,
-            "hp":100,
-            "armor":20
+            "hp":300,
+            "armor":3
             }
         self.totalSpeed=10
         self.sparkSum=0
@@ -252,6 +252,8 @@ class Boss():
 #            taskMgr.remove('collFor'+str(self.id))
         if taskMgr.hasTaskNamed('DOTfor'+str(self.id)):
             taskMgr.remove('DOTfor'+str(self.id))
+        if taskMgr.hasTaskNamed('AIUpdate'):
+            taskMgr.remove('AIUpdate')
         if self.node:
             self.node.removeNode()
         self.common['monsterList'][self.id]=None
@@ -260,6 +262,7 @@ class Boss():
         #self.common['traverser'].removeCollider(self.coll_sphere) 
         self.coll_body.removeNode()
         self.coll_quad.removeNode()
+        self.healthBar.removeNode()
         #base.sfxManagerList[0].update()
         #print  " list, ALL DONE!"
         #print self.common['monsterList']

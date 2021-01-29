@@ -322,7 +322,7 @@ monsters=[
         "arrowhit_sfx":'hit_arrow',
         "attack_sfx":'m_attack1',
         "attack_pattern":[.4],
-        "hp":50,
+        "hp":70,
         "armor":0,
         "dmg":5
         },
@@ -339,7 +339,7 @@ monsters=[
         "arrowhit_sfx":'hit_arrow',
         "attack_sfx":'m_attack1',
         "attack_pattern":[.4],
-        "hp":60,
+        "hp":75,
         "armor":0,
         "dmg":6
         },
@@ -356,7 +356,7 @@ monsters=[
         "arrowhit_sfx":'hit_arrow',
         "attack_sfx":'m_attack1',
         "attack_pattern":[.4],
-        "hp":70,
+        "hp":80,
         "armor":0,
         "dmg":7
         },
@@ -373,7 +373,7 @@ monsters=[
         "arrowhit_sfx":'hit_arrow',
         "attack_sfx":'m_attack1',
         "attack_pattern":[.4],
-        "hp":80,
+        "hp":85,
         "armor":0,
         "dmg":7
         },
