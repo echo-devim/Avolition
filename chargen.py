@@ -63,7 +63,7 @@ class CharGen(DirectObject):
         #self.common['music'].setLoop(True)
         #self.common['music'].play()        
         
-        self.common["random-objects-freq"] = 0.45
+        self.common["random-objects-freq"] = 0.65
 
         self.node=render.attachNewNode("node")
         
@@ -572,7 +572,7 @@ class CharGen(DirectObject):
         pos=(data.levels[self.currentLevel]["enter"][0], data.levels[self.currentLevel]["enter"][1], data.levels[self.currentLevel]["enter"][2])     
         self.common['PC'].node.setPos(pos)
         self.common['music'].loop(1, fadeIn=True)
-        #self.boss1 = Boss(self.common)
+        #self.boss1 = Boss1(self.common)
         
     def open_www(self, url, event=None):
         webbrowser.open_new(url)

@@ -57,7 +57,7 @@ config_fulscreen=ConfigVariableBool('fullscreen')
 config_win_size=ConfigVariableInt('win-size', '640 480')
 config_autoshader=ConfigVariableBool('use-shaders', 0)
 config_bloom=ConfigVariableBool('bloom', 1)
-config_music=ConfigVariableInt('music-volume', '30')
+config_music=ConfigVariableInt('music-volume', '10')
 config_sfx=ConfigVariableInt('sound-volume', '100')
 config_safemode=ConfigVariableBool('safemode', 0)
 #keys

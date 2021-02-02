@@ -11,3 +11,7 @@ rubberduck - 80 CC0 RPG sfx effects (https://opengameart.org/content/80-cc0-rpg-
 LudicArts - RPG handpainted icon pack (http://www.ludicarts.com)
 fireclawthefox - DirectTooltip developer (https://github.com/fireclawthefox/DirectTooltip)
 Shadow3097 - window ui frame creator (https://opengameart.org/content/window-frame)
+Eggomydepresso - Boss2 witch model (https://sketchfab.com/3d-models/wendy-the-witch-09bc0ccba0224437ad814a0b627a43c3)
+Leszek_Szary - energy1 sfx effect creator (https://freesound.org/people/Leszek_Szary/sounds/146727/)
+opensystem - beam sfx effect creator (https://freesound.org/people/opensystem/sounds/333176/)
+Yudena - argh woman sfx effect creator (https://freesound.org/people/Yudena/sounds/377560/)
