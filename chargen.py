@@ -117,10 +117,7 @@ class CharGen(DirectObject):
         coll_sphere.node().setIntoCollideMask(BitMask32.bit(1))
         
         
-        if self.common['nude']:
-            self.character2=Actor("models/pc/female_nude", {"attack":"models/pc/female_attack1","idle":"models/pc/female_idle"}) 
-        else:    
-            self.character2=Actor("models/pc/female", {"attack":"models/pc/female_attack1","idle":"models/pc/female_idle"}) 
+        self.character2=Actor("models/pc/female", {"attack":"models/pc/female_attack1","idle":"models/pc/female_idle"}) 
         #self.character2.setPlayRate(.4, "attack")
         self.character2.reparentTo(self.node)
         self.character2.setBlend(frameBlend = True)  
@@ -151,10 +148,7 @@ class CharGen(DirectObject):
         coll_sphere.setTag("class", "2") 
         coll_sphere.node().setIntoCollideMask(BitMask32.bit(1))
         
-        if self.common['nude']:
-            self.character3=Actor("models/pc/female2_nude", {"attack":"models/pc/female2_arm","reset":"models/pc/female2_fire","idle":"models/pc/female2_idle"}) 
-        else:    
-            self.character3=Actor("models/pc/female2", {"attack":"models/pc/female2_arm","reset":"models/pc/female2_fire","idle":"models/pc/female2_idle"}) 
+        self.character3=Actor("models/pc/female2", {"attack":"models/pc/female2_arm","reset":"models/pc/female2_fire","idle":"models/pc/female2_idle"}) 
         #self.character2.setPlayRate(.4, "attack")
         self.character3.reparentTo(self.node)
         self.character3.setBlend(frameBlend = True)  

@@ -50,7 +50,6 @@ from panda3d.core import WindowProperties
 from panda3d.core import ConfigVariableInt
 from panda3d.core import ConfigVariableBool
 from panda3d.core import ConfigVariableString
-config_nude=ConfigVariableInt('loverslab', 0)
 config_aa=ConfigVariableInt('multisamples', 0)
 buff_size=ConfigVariableInt('buffer-size', 1024)
 config_fulscreen=ConfigVariableBool('fullscreen')
@@ -159,7 +158,6 @@ class Game(DirectObject):
         self.common['keymap']['key_zoomin']=config_zoomin.getValue().split('|')
         self.common['keymap']['key_zoomout']=config_zoomout.getValue().split('|')
         self.common['extra_ambient']=True
-        self.common['nude']=config_nude.getValue()
         self.common['path']=path
 
         #load save

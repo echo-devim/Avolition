@@ -8,7 +8,7 @@ items = [
         {"name" : "torch", "price" : 4, "count" : 0, "available" : 1, "description": "Increase your light radius", "icon" : "icon/items_free_l/64x64/torch.png", "frequency" : 5},
         {"name" : "boots", "price" : 5, "count" : 0, "available" : 2, "description": "Increase your speed +0.1", "icon" : "icon/items_free_l/64x64/boots.png", "frequency" : 6},
         {"name" : "critical damage", "price" : 8, "count" : 0, "available" : 1, "description": "Increase the chance to inflict critical damage", "icon" : "icon/items_free_l/64x64/sword_power.png", "frequency" : 3},
-        {"name" : "invincible ring", "price" : 10, "count" : 0, "available" : 3, "description": "You will not receive any damage for 20 seconds", "icon" : "icon/items_free_l/64x64/ring2.png", "frequency" : 2},
+        {"name" : "invincible ring", "price" : 12, "count" : 0, "available" : 3, "description": "You will not receive any damage for 10 seconds", "icon" : "icon/items_free_l/64x64/ring2.png", "frequency" : 2},
         {"name" : "items boost", "price" : 10, "count" : 0, "available" : 2, "description": "You will find items more often", "icon" : "icon/items_free_l/64x64/bag.png", "frequency" : 1},
         {"name" : "great attack boost", "price" : 12, "count" : 0, "available" : 2, "description": "Increase your attack power +3", "icon" : "icon/items_free_l/64x64/sword_blue.png", "frequency" : 1.5},
 ]

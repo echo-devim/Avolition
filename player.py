@@ -555,7 +555,7 @@ class Player(DirectObject):
             elif self.items[self.selectedItem]['name'] == "invincible ring":
                 oldArmor = self.armor
                 self.armor = 1
-                taskMgr.doMethodLater(15.0, self.resetArmor,'reset armor', extraArgs=[oldArmor], appendTask=True)
+                taskMgr.doMethodLater(10.0, self.resetArmor,'reset armor', extraArgs=[oldArmor], appendTask=True)
             elif self.items[self.selectedItem]['name'] == "health boost":
                 #Ring around player
                 self.HPring=Actor("models/ring_morph", {'anim' : 'models/ring_anim'})
@@ -1131,7 +1131,7 @@ class Knight(Player):
         self.HP=75 #50.0+float(self.common['pc_stat1'])
         self.MaxHP=75 #50.0+float(self.common['pc_stat1'])
         self.HPregen=round((101-self.common['pc_stat1'])/100.0, 1)
-        self.armor=0.3
+        self.armor=0.2
         self.speed=(75+(101-self.common['pc_stat2'])/2)/100.0
         self.actor.setPlayRate(self.speed, "walk")
         self.baseDamage=(1.0+self.common['pc_stat3']/50.0)
@@ -1280,16 +1280,7 @@ class Witch(Player):
     def __init__(self, common):
         super().__init__(common)     
         #actor
-        if self.common['nude']:
-            self.actor=Actor("models/pc/female_nude", {"attack1":"models/pc/female_attack1",
-                                            "attack2":"models/pc/female_attack2",
-                                            "walk":"models/pc/female_run",                                            
-                                            "die":"models/pc/female_die",
-                                            "strafe":"models/pc/female_strafe",
-                                            "hit":"models/pc/female_hit",
-                                            "idle":"models/pc/female_idle"}) 
-        else:                                    
-            self.actor=Actor("models/pc/female", {"attack1":"models/pc/female_attack1",
+        self.actor=Actor("models/pc/female", {"attack1":"models/pc/female_attack1",
                                             "attack2":"models/pc/female_attack2",
                                             "walk":"models/pc/female_run",                                            
                                             "die":"models/pc/female_die",
@@ -1652,18 +1643,7 @@ class Archer(Player):
     def __init__(self, common):
         super().__init__(common)
         #actor
-        if self.common['nude']:
-            self.actor=Actor("models/pc/female2_nude", {"arm":"models/pc/female2_arm",
-                                            "fire":"models/pc/female2_fire",
-                                            "walk":"models/pc/female2_run",
-                                            "run":"models/pc/female2_run2",
-                                            "die":"models/pc/female2_die",
-                                            "strafe":"models/pc/female2_strafe",
-                                            "hit":"models/pc/female2_hit",
-                                            "idle":"models/pc/female2_idle"}) 
-
-        else:
-            self.actor=Actor("models/pc/female2", {"arm":"models/pc/female2_arm",
+        self.actor=Actor("models/pc/female2", {"arm":"models/pc/female2_arm",
                                                 "fire":"models/pc/female2_fire",
                                                 "walk":"models/pc/female2_run",
                                                 "run":"models/pc/female2_run2",
