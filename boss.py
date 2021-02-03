@@ -135,22 +135,26 @@ class Boss1():
                 return task.again
             else:
                 id = len(self.common["random-objects"])
-                object = RandomObject(id, self.common, self.node, render)
+                object = RandomObject(id, self.common, self.node, render, moneyamount=5)
                 self.common["random-objects"].append(object)
-                
+                Interactive(self.common, data.items['key'], self.node.getPos(render))
                 self.coll_body.node().setIntoCollideMask(BitMask32.allOff())
                 self.coll_quad.removeNode()
-                self.common["kills"]-=1
-                if self.common["kills"]==0:
-                    Interactive(self.common, data.items['key'], self.node.getPos(render))               
                 Sequence(Wait(2.0),LerpPosInterval(self.node, 2.0, VBase3(self.node.getX(),self.node.getY(),self.node.getZ()-5)),Func(self.destroy)).start()
                 return task.done
 
-        if (self.state == "HIT") and (self.previous_state == "PURSUING") and (random.random() < 0.3):
-            if(self.boss.getCurrentAnim()!="hit"):
-                self.boss.play("hit")
-                self.common['soundPool'].attachAndPlay(self.boss, "creature_roar_01.ogg")
-            if (self.boss.getCurrentFrame() == self.boss.getNumFrames()-1):
+        if (self.state == "HIT"):
+            rn = 0.4
+            if (type(self.common['PC']).__name__ == "Knight"):
+                rn = 0.1
+            if (random.random() < rn):
+                if(self.boss.getCurrentAnim()!="hit"):
+                    self.boss.play("hit")
+                    self.common['soundPool'].attachAndPlay(self.boss, "creature_roar_01.ogg")
+                    self.state = "PLAYINGHIT"
+        
+        if (self.state == "PLAYINGHIT"):
+            if (self.boss.getCurrentFrame() == None) or (self.boss.getCurrentFrame() == self.boss.getNumFrames()-1):
                 self.state = self.previous_state
             return task.again
 
@@ -183,6 +187,10 @@ class Boss1():
                 else:
                     self.state="ATTACKING"
                     if(self.boss.getCurrentAnim()!="attack2") and (self.boss.getCurrentAnim()!="attack1"):
+                        if (type(self.common['PC']).__name__ == "Knight") and (random.random() > 0.1):
+                            self.state="IDLE"
+                            self.previous_state = self.state
+                            return task.again
                         if (random.random() < 0.5):
                             self.boss.play("attack2")
                             self.common['soundPool'].attachAndPlay(self.boss, "Whoosh4.ogg")
