@@ -195,7 +195,7 @@ class CharGen(DirectObject):
         #gui
         self.mp_logo=DirectFrame(frameSize=(-512, 0, 0, 128),
                                     frameColor=(1,1,1, 1),
-                                    frameTexture='mp_logo.png',
+                                    frameTexture='images/mp_logo.png',
                                     state=DGG.NORMAL,
                                     parent=pixel2d)       
         self.mp_logo.setPos(256+winX/2, 0, -winY)
@@ -208,7 +208,7 @@ class CharGen(DirectObject):
         
         self.title = DirectFrame(frameSize=(-512, 0, 0, 128),
                                     frameColor=(1,1,1, 1),
-                                    frameTexture='select.png',
+                                    frameTexture='images/select.png',
                                     parent=pixel2d)       
         self.title.setPos(256+winX/2, 0, -128)
         self.title.setBin('fixed', 1)
@@ -284,9 +284,9 @@ class CharGen(DirectObject):
                                     value=50,
                                     pageSize=10,      
                                     thumb_relief=DGG.FLAT,
-                                    thumb_frameTexture='glass1.png',
+                                    thumb_frameTexture='images/glass1.png',
                                     #thumb_frameColor=(1,1,1, 1),
-                                    frameTexture='glass2.png',
+                                    frameTexture='images/glass2.png',
                                     scale=96,
                                     #frameSize=(-100, 0, 0, 100),
                                     command=self.set_slider,
@@ -299,9 +299,9 @@ class CharGen(DirectObject):
                                     value=50,
                                     pageSize=10,      
                                     thumb_relief=DGG.FLAT,
-                                    thumb_frameTexture='glass1.png',
+                                    thumb_frameTexture='images/glass1.png',
                                     #thumb_frameColor=(1,1,1, 1),
-                                    frameTexture='glass2.png',
+                                    frameTexture='images/glass2.png',
                                     scale=96,
                                     #frameSize=(-100, 0, 0, 100),
                                     command=self.set_slider,
@@ -314,9 +314,9 @@ class CharGen(DirectObject):
                                     value=50,
                                     pageSize=10,      
                                     thumb_relief=DGG.FLAT,
-                                    thumb_frameTexture='glass1.png',
+                                    thumb_frameTexture='images/glass1.png',
                                     #thumb_frameColor=(1,1,1, 1),
-                                    frameTexture='glass2.png',
+                                    frameTexture='images/glass2.png',
                                     scale=96,
                                     #frameSize=(-100, 0, 0, 100),
                                     command=self.set_slider,

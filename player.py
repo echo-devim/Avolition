@@ -71,7 +71,7 @@ class Player(DirectObject):
             render.setShaderInput("slight0", self.Ambient)        
             render.setShaderInput("plight0", self.pLightNode)
             
-            tex = loader.loadTexture('fog2.png')
+            tex = loader.loadTexture('images/fog2.png')
             self.proj = render.attachNewNode(LensNode('proj'))
             #lens = OrthographicLens()        
             #lens.setFilmSize(3, 3)  
@@ -191,7 +191,7 @@ class Player(DirectObject):
             render.setShaderInput("slight0", self.Ambient)        
             render.setShaderInput("plight0", self.pLightNode)
             
-            tex = loader.loadTexture('fog2.png')
+            tex = loader.loadTexture('images/fog2.png')
             self.proj = render.attachNewNode(LensNode('proj'))
             #lens = OrthographicLens()        
             #lens.setFilmSize(3, 3)  
@@ -377,10 +377,10 @@ class Player(DirectObject):
                                     value=self.common['soundVolume'],
                                     pageSize=10,      
                                     thumb_relief=DGG.FLAT,
-                                    thumb_frameTexture='glass3.png',
+                                    thumb_frameTexture='images/glass3.png',
                                     scale=70,
                                     thumb_frameSize=(0.07, -0.07, -0.11, 0.11),
-                                    frameTexture='glass2.png',                                    
+                                    frameTexture='images/glass2.png',                                    
                                     command=self.optionsSet,
                                     extraArgs=["audio"],
                                     parent=pixel2d) 
@@ -392,10 +392,10 @@ class Player(DirectObject):
                                     value= self.common['musicVolume'],
                                     pageSize=10,      
                                     thumb_relief=DGG.FLAT,
-                                    thumb_frameTexture='glass3.png',
+                                    thumb_frameTexture='images/glass3.png',
                                     scale=70,
                                     thumb_frameSize=(0.07, -0.07, -0.11, 0.11),
-                                    frameTexture='glass2.png',                                    
+                                    frameTexture='images/glass2.png',                                    
                                     command=self.optionsSet,
                                     extraArgs=["music"],
                                     parent=pixel2d) 

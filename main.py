@@ -94,7 +94,7 @@ class Config(DirectObject):
         base.exitFunc = self.save_and_exit
         self.background = DirectFrame(frameSize=(-512, 0, 0, 512),
                                     frameColor=(1,1,1, 1),
-                                    frameTexture='config2.png',
+                                    frameTexture='images/config2.png',
                                     parent=pixel2d)
         self.background.setPos(512, 0, -512)
         self.background.flattenLight()
@@ -252,8 +252,8 @@ class Config(DirectObject):
                                     scale=0.55,
                                     pos=(0.4,0,-0.68),
                                     thumb_relief=DGG.FLAT,
-                                    thumb_frameTexture='glass3.png',
-                                    frameTexture='glass2.png',
+                                    thumb_frameTexture='images/glass3.png',
+                                    frameTexture='images/glass2.png',
                                     command=self.set_option,extraArgs=["audio"])
 
         self.music_slider = DirectSlider(range=(0,100),
@@ -262,8 +262,8 @@ class Config(DirectObject):
                                     scale=0.55,
                                     pos=(0.4,0,-0.77),
                                     thumb_relief=DGG.FLAT,
-                                    thumb_frameTexture='glass3.png',
-                                    frameTexture='glass2.png',
+                                    thumb_frameTexture='images/glass3.png',
+                                    frameTexture='images/glass2.png',
                                     command=self.set_option, extraArgs=["music"])
 
         self.options={}
@@ -285,7 +285,7 @@ class Config(DirectObject):
         if config_safemode.getValue():
             self.options['safemode']=True
             self.safeModeButton['frameColor']=(1,1,1, 1)
-            self.safeModeButton['frameTexture']='glass.png'
+            self.safeModeButton['frameTexture']='images/glass.png'
         else:
             self.options['safemode']=False
         self.set_option("resolution", str(config_win_size.getWord(0))+" "+str(config_win_size.getWord(1)))    
@@ -300,7 +300,7 @@ class Config(DirectObject):
 
         self.key_background = DirectFrame(frameSize=(-512, 0, 0, 512),
                                     frameColor=(1,1,1, 1),
-                                    frameTexture='config_keys.png',
+                                    frameTexture='images/config_keys.png',
                                     parent=pixel2d)
         self.key_background.setPos(512, 0, -512)
         self.key_background.flattenLight()
@@ -310,7 +310,7 @@ class Config(DirectObject):
 
         self.press = DirectFrame(frameSize=(-512, 0, 0, 512),
                                     frameColor=(1,1,1, 1),
-                                    frameTexture='config_press.png',
+                                    frameTexture='images/config_press.png',
                                     parent=pixel2d)
         self.press.setPos(512, 0, -512)
         self.press.flattenLight()
@@ -320,7 +320,7 @@ class Config(DirectObject):
 
         self.back_press=DirectFrame(frameSize=(-220, 0, 0, 32),
                                     frameColor=(1,1,1, 1),
-                                    frameTexture='glass.png',
+                                    frameTexture='images/glass.png',
                                     state=DGG.NORMAL,
                                     parent=self.press)
         self.back_press.setPos(366, 0, -512)
@@ -329,7 +329,7 @@ class Config(DirectObject):
 
         self.back=DirectFrame(frameSize=(-220, 0, 0, 32),
                                     frameColor=(1,1,1, 1),
-                                    frameTexture='glass.png',
+                                    frameTexture='images/glass.png',
                                     state=DGG.NORMAL,
                                     parent=self.key_background)
         self.back.setPos(366, 0, -512)
@@ -338,7 +338,7 @@ class Config(DirectObject):
 
         self.keys=DirectFrame(frameSize=(-350, 0, 0, 30),
                                     frameColor=(1,1,1,1),
-                                    frameTexture='glass3.png',
+                                    frameTexture='images/glass3.png',
                                     state=DGG.NORMAL,
                                     parent=self.background)
         self.keys.setPos(430, 0, -383)
@@ -368,7 +368,7 @@ class Config(DirectObject):
             self.keymap[key].append(DirectFrame(frameSize=(-140, 0, 0, 32),
                                     text_font=self.font,
                                     frameColor=(1,1,1, 1),
-                                    frameTexture='glass.png',
+                                    frameTexture='images/glass.png',
                                     text=self.keymap[key][0].upper(),
                                     text_scale=16,
                                     text_fg=(1,1,1,1),
@@ -382,7 +382,7 @@ class Config(DirectObject):
             self.keymap[key].append(DirectFrame(frameSize=(-140, 0, 0, 32),
                                     text_font=self.font,
                                     frameColor=(1,1,1, 1),
-                                    frameTexture='glass.png',
+                                    frameTexture='images/glass.png',
                                     text=self.keymap[key][1].upper(),
                                     text_scale=16,
                                     text_fg=(1,1,1,1),
@@ -449,7 +449,7 @@ class Config(DirectObject):
         if option=="safemode":
             if not self.options[option]:
                 self.safeModeButton['frameColor']=(1,1,1, 1)
-                self.safeModeButton['frameTexture']='glass.png'
+                self.safeModeButton['frameTexture']='images/glass.png'
                 self.options[option]=True
             else:
                 self.safeModeButton['frameColor']=(0,0,0, 1)
@@ -463,15 +463,15 @@ class Config(DirectObject):
             if value==True:
                 self.fullscreen['frameColor']=(0,0,0, 1)
                 self.windowed['frameColor']=(1,1,1, 1)
-                self.windowed['frameTexture']='glass.png'
+                self.windowed['frameTexture']='images/glass.png'
             else:
                 self.windowed['frameColor']=(0,0,0, 1)
                 self.fullscreen['frameColor']=(1,1,1, 1)
-                self.fullscreen['frameTexture']='glass.png'
+                self.fullscreen['frameTexture']='images/glass.png'
         elif option == "resolution":
             if value=="800 600":
                 self.res11['frameColor']=(1,1,1, 1)
-                self.res11['frameTexture']='glass.png'
+                self.res11['frameTexture']='images/glass.png'
                 self.res12['frameColor']=(0,0,0, 1)
                 self.res13['frameColor']=(0,0,0, 1)
                 self.res21['frameColor']=(0,0,0, 1)
@@ -482,7 +482,7 @@ class Config(DirectObject):
                 self.res33['frameColor']=(0,0,0, 1)
             if value=="1024 768":
                 self.res12['frameColor']=(1,1,1, 1)
-                self.res12['frameTexture']='glass.png'
+                self.res12['frameTexture']='images/glass.png'
                 self.res11['frameColor']=(0,0,0, 1)
                 self.res13['frameColor']=(0,0,0, 1)
                 self.res21['frameColor']=(0,0,0, 1)
@@ -493,7 +493,7 @@ class Config(DirectObject):
                 self.res33['frameColor']=(0,0,0, 1)
             if value=="1280 1024":
                 self.res13['frameColor']=(1,1,1, 1)
-                self.res13['frameTexture']='glass.png'
+                self.res13['frameTexture']='images/glass.png'
                 self.res11['frameColor']=(0,0,0, 1)
                 self.res12['frameColor']=(0,0,0, 1)
                 self.res21['frameColor']=(0,0,0, 1)
@@ -504,7 +504,7 @@ class Config(DirectObject):
                 self.res33['frameColor']=(0,0,0, 1)
             if value=="1280 800":
                 self.res21['frameColor']=(1,1,1, 1)
-                self.res21['frameTexture']='glass.png'
+                self.res21['frameTexture']='images/glass.png'
                 self.res12['frameColor']=(0,0,0, 1)
                 self.res13['frameColor']=(0,0,0, 1)
                 self.res11['frameColor']=(0,0,0, 1)
@@ -515,7 +515,7 @@ class Config(DirectObject):
                 self.res33['frameColor']=(0,0,0, 1)
             if value=="1440 900":
                 self.res22['frameColor']=(1,1,1, 1)
-                self.res22['frameTexture']='glass.png'
+                self.res22['frameTexture']='images/glass.png'
                 self.res12['frameColor']=(0,0,0, 1)
                 self.res13['frameColor']=(0,0,0, 1)
                 self.res21['frameColor']=(0,0,0, 1)
@@ -526,7 +526,7 @@ class Config(DirectObject):
                 self.res33['frameColor']=(0,0,0, 1)
             if value=="1680 1050":
                 self.res23['frameColor']=(1,1,1, 1)
-                self.res23['frameTexture']='glass.png'
+                self.res23['frameTexture']='images/glass.png'
                 self.res12['frameColor']=(0,0,0, 1)
                 self.res13['frameColor']=(0,0,0, 1)
                 self.res21['frameColor']=(0,0,0, 1)
@@ -537,7 +537,7 @@ class Config(DirectObject):
                 self.res33['frameColor']=(0,0,0, 1)
             if value=="1280 720":
                 self.res31['frameColor']=(1,1,1, 1)
-                self.res31['frameTexture']='glass.png'
+                self.res31['frameTexture']='images/glass.png'
                 self.res12['frameColor']=(0,0,0, 1)
                 self.res13['frameColor']=(0,0,0, 1)
                 self.res21['frameColor']=(0,0,0, 1)
@@ -548,7 +548,7 @@ class Config(DirectObject):
                 self.res33['frameColor']=(0,0,0, 1)
             if value=="1366 768":
                 self.res32['frameColor']=(1,1,1, 1)
-                self.res32['frameTexture']='glass.png'
+                self.res32['frameTexture']='images/glass.png'
                 self.res12['frameColor']=(0,0,0, 1)
                 self.res13['frameColor']=(0,0,0, 1)
                 self.res21['frameColor']=(0,0,0, 1)
@@ -559,7 +559,7 @@ class Config(DirectObject):
                 self.res33['frameColor']=(0,0,0, 1)
             if value=="1920 1080":
                 self.res33['frameColor']=(1,1,1, 1)
-                self.res33['frameTexture']='glass.png'
+                self.res33['frameTexture']='images/glass.png'
                 self.res12['frameColor']=(0,0,0, 1)
                 self.res13['frameColor']=(0,0,0, 1)
                 self.res21['frameColor']=(0,0,0, 1)
@@ -572,20 +572,20 @@ class Config(DirectObject):
             if value==False:
                 self.bloom['frameColor']=(0,0,0, 1)
                 self.no_bloom['frameColor']=(1,1,1, 1)
-                self.no_bloom['frameTexture']='glass.png'
+                self.no_bloom['frameTexture']='images/glass.png'
             else:
                 self.no_bloom['frameColor']=(0,0,0, 1)
                 self.bloom['frameColor']=(1,1,1, 1)
-                self.bloom['frameTexture']='glass.png'
+                self.bloom['frameTexture']='images/glass.png'
         elif option == "aa":
             if value==False:
                 self.aa['frameColor']=(0,0,0, 1)
                 self.no_aa['frameColor']=(1,1,1, 1)
-                self.no_aa['frameTexture']='glass.png'
+                self.no_aa['frameTexture']='images/glass.png'
             else:
                 self.no_aa['frameColor']=(0,0,0, 1)
                 self.aa['frameColor']=(1,1,1, 1)
-                self.aa['frameTexture']='glass.png'
+                self.aa['frameTexture']='images/glass.png'
         #print option, value
         self.options[option]=value
 
@@ -652,7 +652,7 @@ class Config(DirectObject):
             for key in self.keymap:
                 temp.write(key+" "+self.keymap[key][0]+"|"+self.keymap[key][1]+"\n") 
 
-        self.background['frameTexture']="loading2.png"
+        self.background['frameTexture']="images/loading2.png"
         #print self.options
         #sys.exit()
         #base.openMainWindow()

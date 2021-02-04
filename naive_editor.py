@@ -100,7 +100,7 @@ class AI_level_editor(DirectObject):
         
         #gui
         self.widget = DirectFrame(frameSize=(-32, 0, 0, 32),
-                                    frameTexture='outside.png',
+                                    frameTexture='images/outside.png',
                                     state=DGG.NORMAL,
                                     parent=pixel2d)
         self.widget.setPos(32,0,-32)                     
@@ -242,11 +242,11 @@ class AI_level_editor(DirectObject):
         if self.outside:        
             self.waypoint_model.setPos(-1,1,0)
             self.outside=False
-            self.widget['frameTexture']='inside.png'
+            self.widget['frameTexture']='images/inside.png'
         else:
             self.waypoint_model.setPos(-1,-1,0)
             self.outside=True
-            self.widget['frameTexture']='outside.png'
+            self.widget['frameTexture']='images/outside.png'
                    
         
     def remove_wall(self):
