@@ -59,9 +59,9 @@ class Player(DirectObject):
         
         self.monster_list=common['monsterList']
         if not self.common['safemode']:
-            wall_shader=loader.loadShader('tiles.sha')
-            black_shader=loader.loadShader('black_parts.sha')
-            floor_shader=loader.loadShader('floor.sha')
+            wall_shader=loader.loadShader('shaders/tiles.sha')
+            black_shader=loader.loadShader('shaders/black_parts.sha')
+            floor_shader=loader.loadShader('shaders/floor.sha')
             self.floor.setShader(floor_shader)
             self.walls.setShader(wall_shader)
             self.black.setShader(black_shader)            
@@ -105,9 +105,9 @@ class Player(DirectObject):
         self.audio3d=common['audio3d']
         
         if not self.common['safemode']:
-            wall_shader=loader.loadShader('tiles.sha')
-            black_shader=loader.loadShader('black_parts.sha')
-            floor_shader=loader.loadShader('floor.sha')
+            wall_shader=loader.loadShader('shaders/tiles.sha')
+            black_shader=loader.loadShader('shaders/black_parts.sha')
+            floor_shader=loader.loadShader('shaders/floor.sha')
             self.floor.setShader(floor_shader)
             self.walls.setShader(wall_shader)
             self.black.setShader(black_shader)
