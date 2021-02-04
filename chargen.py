@@ -277,57 +277,7 @@ class CharGen(DirectObject):
         self.start_next.wrtReparentTo(self.start)
         
         self.start.hide() 
-        
-        
-       
-        self.slider3 = DirectSlider(range=(0,100),
-                                    value=50,
-                                    pageSize=10,      
-                                    thumb_relief=DGG.FLAT,
-                                    thumb_frameTexture='images/glass1.png',
-                                    #thumb_frameColor=(1,1,1, 1),
-                                    frameTexture='images/glass2.png',
-                                    scale=96,
-                                    #frameSize=(-100, 0, 0, 100),
-                                    command=self.set_slider,
-                                    extraArgs=["3"],
-                                    parent=pixel2d)  
-        self.slider3.setPos(winX/2, 0, -16)
-        self.slider3.setBin('fixed', 2)
-        
-        self.slider2 = DirectSlider(range=(0,100),
-                                    value=50,
-                                    pageSize=10,      
-                                    thumb_relief=DGG.FLAT,
-                                    thumb_frameTexture='images/glass1.png',
-                                    #thumb_frameColor=(1,1,1, 1),
-                                    frameTexture='images/glass2.png',
-                                    scale=96,
-                                    #frameSize=(-100, 0, 0, 100),
-                                    command=self.set_slider,
-                                    extraArgs=["2"],
-                                    parent=pixel2d)  
-        self.slider2.setPos(winX/2, 0, -64)
-        self.slider2.setBin('fixed', 2)
-        
-        self.slider1 = DirectSlider(range=(0,100),
-                                    value=50,
-                                    pageSize=10,      
-                                    thumb_relief=DGG.FLAT,
-                                    thumb_frameTexture='images/glass1.png',
-                                    #thumb_frameColor=(1,1,1, 1),
-                                    frameTexture='images/glass2.png',
-                                    scale=96,
-                                    #frameSize=(-100, 0, 0, 100),
-                                    command=self.set_slider,
-                                    extraArgs=["1"],
-                                    parent=pixel2d)  
-        self.slider1.setPos(winX/2, 0, -112)
-        self.slider1.setBin('fixed', 2)
-        self.slider1.hide()
-        self.slider2.hide()
-        self.slider3.hide()
-        
+              
         self.cursor=DirectFrame(frameSize=(-32, 0, 0, 32),
                                     frameColor=(1, 1, 1, 1),
                                     frameTexture='icon/cursor1.png',
@@ -337,72 +287,24 @@ class CharGen(DirectObject):
         self.cursor.setBin('fixed', 10)
         self.cursor.setTransparency(TransparencyAttrib.MDual)
         
-        self.button1A=DirectFrame(frameSize=(-32, 0, 0, 32),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/armor.png',
+        self.frameDesc=DirectFrame(frameSize=(0, 1, 0, 0.3),
+                                    frameColor=(1,1,1, 1),
+                                    frameTexture='images/frame1.png',
                                     state=DGG.NORMAL,
-                                    parent=pixel2d)        
-        self.button1A.setPos(128+winX/2, 0, -128)
-        self.button1A.setBin('fixed', 1)
-        
-        self.button1B=DirectFrame(frameSize=(-32, 0, 0, 32),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/armor.png',
-                                    state=DGG.NORMAL,
-                                    parent=pixel2d)        
-        self.button1B.setPos(-96+winX/2, 0, -128)
-        self.button1B.setBin('fixed', 1)
-        
-        self.button2A=DirectFrame(frameSize=(-32, 0, 0, 32),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/armor.png',
-                                    state=DGG.NORMAL,
-                                    parent=pixel2d)        
-        self.button2A.setPos(128+winX/2, 0, -79)
-        self.button2A.setBin('fixed', 1)
-        
-        self.button2B=DirectFrame(frameSize=(-32, 0, 0, 32),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/armor.png',
-                                    state=DGG.NORMAL,
-                                    parent=pixel2d)        
-        self.button2B.setPos(-96+winX/2, 0, -79)
-        self.button2B.setBin('fixed', 1)
-        
-        self.button3A=DirectFrame(frameSize=(-32, 0, 0, 32),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/armor.png',
-                                    state=DGG.NORMAL,
-                                    parent=pixel2d)        
-        self.button3A.setPos(128+winX/2, 0, -32)
-        self.button3A.setBin('fixed', 1)
-        
-        self.button3B=DirectFrame(frameSize=(-32, 0, 0, 32),
-                                    frameColor=(1, 1, 1, 1),
-                                    frameTexture='icon/armor.png',
-                                    state=DGG.NORMAL,
-                                    parent=pixel2d)        
-        self.button3B.setPos(-96+winX/2, 0, -32)
-        self.button3B.setBin('fixed', 1)
-        
-        self.button1A.hide()
-        self.button1B.hide()
-        self.button2A.hide()
-        self.button2B.hide()
-        self.button3A.hide()
-        self.button3B.hide()
-        self.button1A.bind(DGG.WITHIN, self.GUIOnEnter, ["1A"]) 
-        self.button1A.bind(DGG.WITHOUT, self.GUIOnExit)
-        self.button2A.bind(DGG.WITHIN, self.GUIOnEnter, ["2A"]) 
-        self.button2A.bind(DGG.WITHOUT, self.GUIOnExit)
-        self.button3A.bind(DGG.WITHIN, self.GUIOnEnter, ["3A"]) 
-        self.button3A.bind(DGG.WITHOUT, self.GUIOnExit)
-        self.button1B.bind(DGG.WITHIN, self.GUIOnEnter, ["1B"]) 
-        self.button1B.bind(DGG.WITHOUT, self.GUIOnExit)
-        self.button2B.bind(DGG.WITHIN, self.GUIOnEnter, ["2B"]) 
-        self.button2B.bind(DGG.WITHOUT, self.GUIOnExit)
-        self.button3B.bind(DGG.WITHIN, self.GUIOnEnter, ["3B"]) 
-        self.button3B.bind(DGG.WITHOUT, self.GUIOnExit)
+                                    pos=(-0.5,0,0.6),
+                                    parent=aspect2d)
+        self.labelDesc = DirectLabel(text="",
+                    text_fg=(1,1,1,1),
+                    frameColor=(0,0,0,0),
+                    #text_font=self.font,
+                    text_scale=0.06,
+                    text_align = TextNode.ALeft,
+                    pos=(0.1,0,0.2),
+                    parent=self.frameDesc)
+        self.frameDesc.setBin('fixed', 1)
+        self.frameDesc.hide()
+        self.frameDesc.bind(DGG.WITHIN, self.GUIOnEnter, ["3B"]) 
+        self.frameDesc.bind(DGG.WITHOUT, self.GUIOnExit)
 
         #tooltip
         
@@ -426,32 +328,6 @@ class CharGen(DirectObject):
         self.Tooltip.flattenLight()                        
         self.Tooltip.setBin('fixed', 300)
         self.Tooltip.hide()
-        
-        self.tooltip_text=[None, 
-                           {"1A":"ARMOR:\nYou have more Hit Points\n",
-                           "1B":"REGENERATION:\nYou heal over time\n",
-                           "2A":"BLOCK:\nYour block is more effective\n",
-                           "2B":"SPEED:\nYour move faster\n",
-                           "3A":"DAMAGE:\nYou deal more damage\n",
-                           "3B":"CRITICAL HIT:\nChance for a critical hit\n"},
-                          {"1A":"BLAST:\nBigger Magic Bolt explosion\n",
-                           "1B":"DAMAGE:\nMagic Bolt deals more damage\n",
-                           "2A":"LIGHTNING:\nMore damage to far targets\n",
-                           "2B":"THUNDER:\nMore damage to near targets\n",
-                           "3A":"RAPID CHARGE:\nExponential damage increase\n",
-                           "3B":"STATIC CHARGE:\nLinear damage increase\n"},                           
-                          {"1A":"BARBS:\nOne hit counts as two\n",
-                           "1B":"PIERCE:\nArrows pass through targets\n",
-                           "2A":"BLEED:\nDamage over time\n",
-                           "2B":"CRIPPLE:\nSlow down enemies\n",
-                           "3A":"FINESSE:\nMore critical hits\n",
-                           "3B":"PROWESS:\nMore damage\n"},                           
-                          {"1A":"BURNING DEATH:\nMagma deals more damage\n",
-                           "1B":"MAGMA FLOW:\nMore magma at once\n",
-                           "2A":"HEART OF FIRE:\nMagma lasts longer\n",
-                           "2B":"VOLCANIC ACTIVITY:\nMagma is bigger\n",
-                           "3A":"PHASESHIFT:\nYou can teleport more often\n",
-                           "3B":"WARP FIELD:\nFaster recovery after teleport\n"} ]
         #collisions
         #self.traverser=CollisionTraverser("playerTrav")
         #self.traverser.setRespectPrevTransform(True)        
@@ -522,18 +398,11 @@ class CharGen(DirectObject):
         self.common['traverser'].removeCollider(self.pickerNP)
         self.pickerNP.removeNode() 
         self.Ambient.removeNode()
-                
-        self.button1A.destroy()
-        self.button1B.destroy()
-        self.button2A.destroy()
-        self.button2B.destroy()
-        self.button3A.destroy()
-        self.button3B.destroy()
+
+        self.frameDesc.destroy()
+        self.labelDesc.destroy()
         self.Tooltip.destroy()
         self.cursor.destroy()
-        self.slider1.destroy()
-        self.slider2.destroy()
-        self.slider3.destroy()
         self.start.destroy()
         self.start_back.destroy()
         self.start_next.destroy()
@@ -576,97 +445,12 @@ class CharGen(DirectObject):
             wp = base.win.getProperties()
             X= wp.getXSize()/2
             Y= wp.getYSize()
-            self.slider3.setPos(X, 0, -16)
-            self.slider2.setPos(X, 0, -64)
-            self.slider1.setPos(X, 0, -112)
-            self.button1A.setPos(128+X, 0, -128)
-            self.button1B.setPos(-96+X, 0, -128)
-            self.button2A.setPos(128+X, 0, -79)
-            self.button2B.setPos(-96+X, 0, -79)
-            self.button3A.setPos(128+X, 0, -32)
-            self.button3B.setPos(-96+X, 0, -32)
+
+#            self.frameDesc.setPos(-96+X, 0, -32)
             self.start.setPos(128+X, 0, -164)
             self.title.setPos(256+X, 0, -128)
             self.close.setPos(X*2, 0, -32)
             self.mp_logo.setPos(256+X, 0, -Y) 
-            
-    def getSliderValue(self, option):        
-        value=0        
-        if option[0]=="1":
-            value=int(self.slider1['value'])
-        elif option[0]=="2":
-            value=int(self.slider2['value'])
-        elif option[0]=="3":
-            value=int(self.slider3['value'])
-            
-        if self.current_class=="2":    
-            if option=="1A":
-                return "{0}% blast size".format(value+50)
-            elif option=="1B":
-                return "{0}% damage".format(75+(101-value)/2)
-            elif option=="2A":
-                return "{0}% damage to far targets".format(value*2)
-            elif option=="2B":
-                return "{0}% damage to near targets\n".format(2*(100-value))
-            elif option=="3A":
-                return "{0}-{1} Lightning damage\n{2}-{3} Magic Bolt damage".format(
-                                                                                    int(round(value/100.0+8*(101-value)/100.0)),
-                                                                                    int(round(15*value/100.0+8*(101-value)/100)),
-                                                                                    2*int(round(2*value/100.0+6*(101-value)/100.0)),
-                                                                                    2*int(round(26*value/100.0+20*(101-value)/100))
-                                                                                    )
-            elif option=="3B":
-                return "{0}-{1} Lightning damage\n{2}-{3} Magic Bolt damage".format(
-                                                                                    int(round(value/100.0+8*(101-value)/100.0)),
-                                                                                    int(round(15*value/100.0+8*(101-value)/100)),
-                                                                                    2*int(round(2*value/100.0+6*(101-value)/100.0)),
-                                                                                    2*int(round(26*value/100.0+20*(101-value)/100))
-                                                                                    )
-        elif self.current_class=="1":    
-            if option=="1A":
-                return "{0} total HP".format(value+50)
-            elif option=="1B":
-                return "+{0}HP/second".format(round((101-value)/100.0, 1))
-            elif option=="2A":
-                return "{0}% damage blocked".format(50+(value+1)/2)
-            elif option=="2B":
-                return "{0}% movement speed".format(75+(101-value)/2)
-            elif option=="3A":
-                return "{0}-{1} damage".format( int(round(1.0+(value+1.0)/100.0)), int(round(15.0*(1.0+(value+1.0)/50.0))))
-            elif option=="3B":
-                return "{0}% chance for +{1} damage".format(5+(101-value)/2,5+(101-value)/5)
-                
-        elif self.current_class=="3":    
-            if option=="1A":
-                return "{0}% chance to activate".format(int(value/2))
-            elif option=="1B":
-                return "{0}%chance to pierce".format(int((100-value)/2))
-            elif option=="2A":
-                return "{0}% of critical hits".format(int(value))
-            elif option=="2B":
-                return "{0}% of critical hits".format(int(100-value))
-            elif option=="3A":
-                return "{0}% chance for critical hit".format(25+ int(value/2))
-            elif option=="3B":
-                return "{0}% damage".format(50+int(100-value))   
-        elif self.current_class=="4":    
-            if option=="1A":
-                return "{0}% damage".format(50+int(value))
-            elif option=="1B":
-                v=1+int((100-value)/20)
-                if v<2:
-                    return "Control 1 orb of magma"                    
-                return "Control {0} orbs of magma".format(v)
-            elif option=="2A":
-                return "{0}% time".format(50+int(value))
-            elif option=="2B":
-                return "{0}% size".format(50+int(100-value))
-            elif option=="3A":
-                return "Teleport every {0} seconds".format(16.0*((100-value)/1000.0)+0.8)
-            elif option=="3B":
-                return "{0}% recovery time".format(50+int(value))
-                
-        return "???"
         
     def GUIOnEnter(self, object, event=None):       
         if object[0]=="4":            
@@ -683,15 +467,6 @@ class CharGen(DirectObject):
         if not self.current_class:
             return            
         #print int(self.current_class)
-        self.Tooltip['text']=self.tooltip_text[int(self.current_class)][object]+self.getSliderValue(object)    
-        if object[1]=="A":            
-            self.Tooltip['text_pos'] = (30, -10,0)
-            self.Tooltip['text_align'] =TextNode.ALeft
-        else:            
-            self.Tooltip['text_pos'] = (-20, -10,0)
-            self.Tooltip['text_align'] =TextNode.ARight
-        self.Tooltip.show()
-        #print "in"
         
     def GUIOnExit(self, event=None):
         self.Tooltip.hide()
@@ -739,117 +514,42 @@ class CharGen(DirectObject):
                 my_class=entry.getIntoNodePath().getTag("class")
                 
         if my_class=="1":
-            self.slider1['value']=50        
-            self.slider2['value']=50        
-            self.slider3['value']=50
+
             self.current_class=my_class
             self.title.hide()
             self.start.show()
-            self.button1A.show()
-            self.button1B.show()
-            self.button2A.show()
-            self.button2B.show()
-            self.button3A.show()
-            self.button3B.show()
-            
-            self.button1A['frameTexture']='icon/armor.png'
-            self.button1B['frameTexture']='icon/heart.png'
-            self.button2A['frameTexture']='icon/shield2.png'
-            self.button2B['frameTexture']='icon/move.png'
-            self.button3A['frameTexture']='icon/power.png'
-            self.button3B['frameTexture']='icon/critical.png'
-            
-            #self.skills.show()
-            self.slider1.show()
-            self.slider2.show()
-            self.slider3.show()            
+            self.labelDesc.setText("Knight:\nHe has greater resistance.\nHe can attack with the sword\nand defend with a shield.")
+            self.frameDesc.show()
             Sequence(self.character1.actorInterval("attack"),self.character1.actorInterval("block"), Func(self.loopAnim, self.character1, "idle")).start()
             self.swingSound.play()
             #self.character1.play("attack")
             self.character2.loop("idle")
         elif my_class=="2":
-            self.slider1['value']=50        
-            self.slider2['value']=50        
-            self.slider3['value']=50
             self.current_class=my_class
             self.title.hide()
             self.start.show()
-            self.button1A.show()
-            self.button1B.show()
-            self.button2A.show()
-            self.button2B.show()
-            self.button3A.show()
-            self.button3B.show()
-            
-            self.button1A['frameTexture']='icon/blast.png'
-            self.button1B['frameTexture']='icon/damage.png'
-            self.button2A['frameTexture']='icon/lightning.png'
-            self.button2B['frameTexture']='icon/thunder.png'
-            self.button3A['frameTexture']='icon/amp.png'
-            self.button3B['frameTexture']='icon/volt.png'
-            
-            
-            self.slider1.show()
-            self.slider2.show()
-            self.slider3.show()                
+            self.labelDesc.setText("Witch:\nShe can throw energy balls and\na long distance beam.")
+            self.frameDesc.show()
             Sequence(self.character2.actorInterval("attack", playRate=0.8),Func(self.loopAnim, self.character2, "idle")).start()
             Sequence(Wait(0.3), Func(self.start_lightning, 0.05)).start()
             #self.character2.play("attack")
             self.character1.loop("idle")
             #RayVfx(self.character2, texture='vfx/lightning.png').start()
         elif my_class=="3":
-            self.slider1['value']=50        
-            self.slider2['value']=50        
-            self.slider3['value']=50
             self.current_class=my_class
             self.title.hide()
             self.start.show()
-            self.button1A.show()
-            self.button1B.show()
-            self.button2A.show()
-            self.button2B.show()
-            self.button3A.show()
-            self.button3B.show()
-            
-            self.button1A['frameTexture']='icon/barbs.png'
-            self.button1B['frameTexture']='icon/pierce.png'
-            self.button2A['frameTexture']='icon/bleed.png'
-            self.button2B['frameTexture']='icon/cripple.png'
-            self.button3A['frameTexture']='icon/finese.png'
-            self.button3B['frameTexture']='icon/bow_damage.png'
-            
-            
-            self.slider1.show()
-            self.slider2.show()
-            self.slider3.show()
+            self.labelDesc.setText("Archer:\nShe can throw arrows\nand run faster.")
+            self.frameDesc.show()
             self.drawSound.play()
             self.character3.play("attack")
             Sequence(Wait(1.5),Func(self.fireArrow), Func(self.character3.play, "reset"),Wait(1.0),Func(self.loopAnim, self.character3, "idle")).start()
         elif my_class=="4":
-            self.slider1['value']=50        
-            self.slider2['value']=50        
-            self.slider3['value']=50
             self.current_class=my_class
             self.title.hide()
             self.start.show()
-            self.button1A.show()
-            self.button1B.show()
-            self.button2A.show()
-            self.button2B.show()
-            self.button3A.show()
-            self.button3B.show()
-            
-            self.button1A['frameTexture']='icon/hand_o_fate.png'
-            self.button1B['frameTexture']='icon/magma_flow.png'
-            self.button2A['frameTexture']='icon/heart_o_fire.png'
-            self.button2B['frameTexture']='icon/vulcanic.png'
-            self.button3A['frameTexture']='icon/warp.png'
-            self.button3B['frameTexture']='icon/thorns.png'
-            
-            #self.skills.show()
-            self.slider1.show()
-            self.slider2.show()
-            self.slider3.show()
+            self.labelDesc.setText("Wizard:\nHe can throw magma balls\nand teleport himself.")
+            self.frameDesc.show()
             self.character4.loop("attack")
             aura=vfx(self.character4, texture='vfx/tele2.png',scale=.5, Z=.85, depthTest=False, depthWrite=False)
             aura.show()
