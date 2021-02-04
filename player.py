@@ -539,7 +539,10 @@ class Player(DirectObject):
             if self.items[self.selectedItem]['name'] == "health flask":
                 self.partialHeal(20)
             elif self.items[self.selectedItem]['name'] == "armor flask":
-                self.armor += 0.1
+                if self.armor >= 0.8:
+                    self.armor += 0.01
+                else:
+                    self.armor += 0.1
             elif self.items[self.selectedItem]['name'] == "attack boost":
                 self.attack_extra_damage += 1
             elif self.items[self.selectedItem]['name'] == "great attack boost":
