@@ -11,7 +11,7 @@ from engine import *
 
 
 class Boss1():
-    def __init__(self, common):
+    def __init__(self, common, pos=(0,0,0)):
         self.common = common
         common['monsterList'].append(self)
         id=len(common['monsterList'])-1
@@ -46,7 +46,7 @@ class Boss1():
         #tex = loader.loadTexture('models/boss1-monster/creature1Normal.png')
         #boss1.setTexture(tex, 1)
         #self.boss.setColor(0.2, 0.0, 0.9, 0.5)
-        self.node.setPos(render,(0,2,0))
+        self.node.setPos(render,pos)
         self.rootBone=self.boss.exposeJoint(None, 'modelRoot', 'hips')
 
         self.maxHP=self.stats['hp']
@@ -99,11 +99,11 @@ class Boss1():
         self.previous_state=self.state
         #self.PC = self.common['PC']
         #taskMgr.doMethodLater(.6, self.runCollisions,'collFor'+str(self.id))
-        self.setAI()
+        taskMgr.doMethodLater(1.0, self.setAI, 'setAITask')
         taskMgr.doMethodLater(1.0, self.damageOverTime,'DOTfor'+str(self.id))   
         #taskMgr.add(self.runAI, "BossAIfor"+str(id))
 
-    def setAI(self):
+    def setAI(self, task):
         #Creating AI World
         self.AIworld = AIWorld(render)
 
@@ -119,6 +119,7 @@ class Boss1():
 
         #AI World update
         taskMgr.add(self.runAI,"AIUpdate")
+        return task.done
 
     def runAI(self, task):
         #print(self.stats['hp'])
@@ -142,11 +143,14 @@ class Boss1():
                 self.coll_quad.removeNode()
                 Sequence(Wait(2.0),LerpPosInterval(self.node, 2.0, VBase3(self.node.getX(),self.node.getY(),self.node.getZ()-5)),Func(self.destroy)).start()
                 return task.done
+        
+        if self.stats['hp'] < 50:
+            self.AIchar.setMass(180)
 
         if (self.state == "HIT"):
-            rn = 0.4
+            rn = 0.005
             if (type(self.common['PC']).__name__ == "Knight"):
-                rn = 0.1
+                rn = 0.4
             if (random.random() < rn):
                 if(self.boss.getCurrentAnim()!="hit"):
                     self.boss.play("hit")
@@ -164,7 +168,9 @@ class Boss1():
 
         if self.common['PC'].HP <= 0 or self.node.getDistance(target)>14:
             self.state="IDLE"
+            self.common['spawner'].monster_limit = 4
         else:
+            self.common['spawner'].monster_limit = 2
             if self.boss.getAnimControl('scream').isPlaying():
                 #we must wait until the animation is finished
                 return task.again
@@ -280,7 +286,7 @@ class Boss1():
 
 
 class Boss2():
-    def __init__(self, common):
+    def __init__(self, common, pos=(0,0,0)):
         self.common = common
         common['monsterList'].append(self)
         id=len(common['monsterList'])-1
@@ -313,7 +319,7 @@ class Boss2():
         #tex = loader.loadTexture('models/boss1-monster/creature1Normal.png')
         #boss1.setTexture(tex, 1)
         #self.boss.setColor(0.2, 0.0, 0.9, 0.5)
-        self.node.setPos(render,(0,3,1))
+        self.node.setPos(render,pos)
         self.rootBone=self.boss.exposeJoint(None, 'modelRoot', 'Hips')
 
         self.ambientLight=AmbientLight('ambientLight')
@@ -461,9 +467,11 @@ class Boss2():
                 self.waitfor -= 1
                 return task.again
 
-        if self.common['PC'].HP <= 0 or self.node.getDistance(target)>20:
+        if self.common['PC'].HP <= 0 or self.node.getDistance(target)>25:
             self.state="IDLE"
+            self.common['spawner'].monster_limit = 3
         else:
+            self.common['spawner'].monster_limit = 0
             if (random.random() < 0.003) and (self.state == "PURSUING"):
                 self.state="IDLE"
                 self.waitfor = random.randrange(200)

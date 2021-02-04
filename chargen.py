@@ -566,7 +566,6 @@ class CharGen(DirectObject):
         pos=(data.levels[self.currentLevel]["enter"][0], data.levels[self.currentLevel]["enter"][1], data.levels[self.currentLevel]["enter"][2])     
         self.common['PC'].node.setPos(pos)
         self.common['music'].loop(1, fadeIn=True)
-        #self.boss1 = Boss1(self.common)
         
     def open_www(self, url, event=None):
         webbrowser.open_new(url)

@@ -208,7 +208,6 @@ class RandomObject():
             self.message.removeNode()
         self.ambientLightNode.removeNode()
 
-
 class Monster():
     def __init__(self, setup_data, common, level=1.0, start_pos=(0,0,0)):
         common['monsterList'].append(self)
@@ -505,7 +504,7 @@ class Monster():
             #self.actor.play("die")
             self.common["kills"]-=1
             if self.common["kills"]==0:
-                Interactive(self.common, data.items['key'], self.node.getPos(render))               
+                Interactive(self.common, data.items['key'], self.node.getPos(render))
             Sequence(Wait(2.0),LerpPosInterval(self.node, 2.0, VBase3(self.node.getX(),self.node.getY(),self.node.getZ()-5)),Func(self.destroy)).start()
             return task.done
         elif self.state=="STOP":
@@ -745,7 +744,7 @@ class MusicPlayer():
         self.musicList[track].play()
         self.track=track
 
-
+from boss import *
 class LevelLoader():
     '''Loads new levels and unloads old ones'''
     def __init__(self, common):
@@ -894,3 +893,8 @@ class LevelLoader():
         pe = ParticleEffect()
         pe.loadConfig(Filename("vfx/softparticles.ptf"))
         pe.start(parent=base.render2d, renderParent=base.render2d)
+
+        if map_name == "models/level_a1.bam":
+            self.boss = Boss2(self.common, pos=(-7.39251, -19.2672, 1))
+        elif map_name == "models/level_a5.bam":
+            self.boss = Boss1(self.common, pos=(28.8778, 46.8372, 0))

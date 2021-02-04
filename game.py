@@ -307,6 +307,7 @@ class Game(DirectObject):
             base.screenshot(path+'screenshots/')
     def hideLoadscreen(self, task):
         self.loadscreen.hide()
+        base.setFrameRateMeter(True)
         if base.frameRateMeter:
             #base.frameRateMeter.setAlign(TextNode.ALeft)
             fps_node=NodePath(base.frameRateMeter)
