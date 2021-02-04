@@ -160,15 +160,7 @@ class Game(DirectObject):
         self.common['extra_ambient']=True
         self.common['path']=path
 
-        #load save
-        levels=[]
-        try:
-            f = open(path+'save.dat', 'r')
-            for line in f:
-                levels.append(line)
-        except IOError:
-            print("No save file")
-        self.common['max_level']=len(levels)
+        self.common['max_level']=0
 
         self.common["key_icon"]=DirectFrame(frameSize=(-64, 0, 0, 64),
                                     frameColor=(1, 1, 1, 1),

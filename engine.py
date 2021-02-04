@@ -799,13 +799,6 @@ class LevelLoader():
 
         self.common["key_icon"].hide()
 
-    def saveLevel(self, level):
-        with open(self.common['path']+"save.dat", "w") as temp:
-            for i in xrange(level):
-                #save secret hashcode string
-                #..not really, we later count just the lines so you can put anything here
-                temp.write(('%06x' % random.randrange(16**6)).upper()+"\n")
-
     def load_next(self):
         level=1+self.common["current_level"]
         self.load(level)
@@ -817,7 +810,7 @@ class LevelLoader():
         self.unload()
         if level>self.common['max_level']:
             self.common['max_level']=level
-            self.saveLevel(level)
+            #self.saveLevel(level)
 
         #map
         self.common['map']=loader.loadModel(map_name)
