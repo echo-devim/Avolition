@@ -222,61 +222,24 @@ class CharGen(DirectObject):
         self.close.setPos(winX, 0, -32)
         self.close.setBin('fixed', 1)
         self.close.bind(DGG.B1PRESS, self.exit) 
-        
-        self.start=DirectFrame(frameSize=(-256, 0, 0, 32),                                    
-                                    frameTexture='icon/level_select.png',  
-                                    frameColor=(1, 1, 1, 1),                                    
-                                    parent=pixel2d)       
-        self.start.setPos(128+winX/2, 0, -164)
-        self.start.setTransparency(TransparencyAttrib.MDual)
-        #self.start.bind(DGG.B1PRESS, self.onStart)
-        self.start.setBin('fixed', 1)
-        #self.start.hide()
-        self.start_main=DirectFrame(frameSize=(-192, 0, 0, 32),
-                                    frameColor=(1,1,1, 0),    
+
+        self.new_game_button=DirectButton(frameSize=(-0.2, 0.2, 0, 0.08),
+                                    frameColor=(1,1,1,1),    
+                                    frameTexture='images/level_select.png',
                                     text_font=self.font,
-                                    text='Start in Level 1',
-                                    text_pos = (-160, 12,0),
-                                    text_scale = 16,
+                                    text='START NEW GAME',
+                                    text_pos = (-0.16,0.026,0),
+                                    text_scale = 0.035,
                                     text_fg=(0,0,0,1),
                                     text_align=TextNode.ALeft, 
                                     textMayChange=1,  
-                                    state=DGG.NORMAL,
-                                    parent=pixel2d)       
-        self.start_main.setPos(96+winX/2, 0, -164)
-        self.start_main.setTransparency(TransparencyAttrib.MDual)
-        self.start_main.bind(DGG.B1PRESS, self.onStart)
-        self.start_main.bind(DGG.WITHIN, self.GUIOnEnter, ["4A"]) 
-        self.start_main.bind(DGG.WITHOUT, self.GUIOnExit)
-        self.start_main.setBin('fixed', 1)
-        self.start_main.wrtReparentTo(self.start)
-        
-        self.start_back=DirectFrame(frameSize=(-32, 0, 0, 32),
-                                    frameColor=(1,0,0, 0),                                    
-                                    state=DGG.NORMAL,
-                                    parent=pixel2d)       
-        self.start_back.setPos(128+winX/2, 0, -164)
-        self.start_back.setTransparency(TransparencyAttrib.MDual)
-        self.start_back.bind(DGG.B1PRESS, self.selectLevel, [1])
-        self.start_back.bind(DGG.WITHIN, self.GUIOnEnter, ["4B"]) 
-        self.start_back.bind(DGG.WITHOUT, self.GUIOnExit)
-        self.start_back.setBin('fixed', 1)
-        self.start_back.wrtReparentTo(self.start)
-        
-        self.start_next=DirectFrame(frameSize=(-32, 0, 0, 32),
-                                    frameColor=(0,1,0, 0),                                    
-                                    state=DGG.NORMAL,
-                                    parent=pixel2d)       
-        
-        self.start_next.setPos(-96+winX/2, 0, -164)
-        self.start_next.setTransparency(TransparencyAttrib.MDual)
-        self.start_next.bind(DGG.B1PRESS, self.selectLevel, [-1])
-        self.start_next.bind(DGG.WITHIN, self.GUIOnEnter, ["4C"]) 
-        self.start_next.bind(DGG.WITHOUT, self.GUIOnExit)
-        self.start_next.setBin('fixed', 1)
-        self.start_next.wrtReparentTo(self.start)
-        
-        self.start.hide() 
+                                    state=DGG.FLAT,
+                                    relief=DGG.FLAT,
+                                    pos=(0,0,0.5),
+                                    command=self.onStart,
+                                    parent=aspect2d)
+        self.new_game_button.setBin('fixed', 1)
+        self.new_game_button.hide()
               
         self.cursor=DirectFrame(frameSize=(-32, 0, 0, 32),
                                     frameColor=(1, 1, 1, 1),
@@ -403,9 +366,7 @@ class CharGen(DirectObject):
         self.labelDesc.destroy()
         self.Tooltip.destroy()
         self.cursor.destroy()
-        self.start.destroy()
-        self.start_back.destroy()
-        self.start_next.destroy()
+        self.new_game_button.destroy()
         self.close.destroy()
         self.title.destroy()
         self.mp_logo.destroy()
@@ -447,7 +408,6 @@ class CharGen(DirectObject):
             Y= wp.getYSize()
 
 #            self.frameDesc.setPos(-96+X, 0, -32)
-            self.start.setPos(128+X, 0, -164)
             self.title.setPos(256+X, 0, -128)
             self.close.setPos(X*2, 0, -32)
             self.mp_logo.setPos(256+X, 0, -Y) 
@@ -517,9 +477,9 @@ class CharGen(DirectObject):
 
             self.current_class=my_class
             self.title.hide()
-            self.start.show()
             self.labelDesc.setText("Knight:\nHe has greater resistance.\nHe can attack with the sword\nand defend with a shield.")
             self.frameDesc.show()
+            self.new_game_button.show()
             Sequence(self.character1.actorInterval("attack"),self.character1.actorInterval("block"), Func(self.loopAnim, self.character1, "idle")).start()
             self.swingSound.play()
             #self.character1.play("attack")
@@ -527,9 +487,9 @@ class CharGen(DirectObject):
         elif my_class=="2":
             self.current_class=my_class
             self.title.hide()
-            self.start.show()
             self.labelDesc.setText("Witch:\nShe can throw energy balls and\na long distance beam.")
             self.frameDesc.show()
+            self.new_game_button.show()
             Sequence(self.character2.actorInterval("attack", playRate=0.8),Func(self.loopAnim, self.character2, "idle")).start()
             Sequence(Wait(0.3), Func(self.start_lightning, 0.05)).start()
             #self.character2.play("attack")
@@ -538,18 +498,18 @@ class CharGen(DirectObject):
         elif my_class=="3":
             self.current_class=my_class
             self.title.hide()
-            self.start.show()
             self.labelDesc.setText("Archer:\nShe can throw arrows\nand run faster.")
             self.frameDesc.show()
+            self.new_game_button.show()
             self.drawSound.play()
             self.character3.play("attack")
             Sequence(Wait(1.5),Func(self.fireArrow), Func(self.character3.play, "reset"),Wait(1.0),Func(self.loopAnim, self.character3, "idle")).start()
         elif my_class=="4":
             self.current_class=my_class
             self.title.hide()
-            self.start.show()
             self.labelDesc.setText("Wizard:\nHe can throw magma balls\nand teleport himself.")
             self.frameDesc.show()
+            self.new_game_button.show()
             self.character4.loop("attack")
             aura=vfx(self.character4, texture='vfx/tele2.png',scale=.5, Z=.85, depthTest=False, depthWrite=False)
             aura.show()
