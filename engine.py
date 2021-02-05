@@ -204,7 +204,6 @@ class RandomObject():
         taskMgr.remove('random-object' + str(self.id))
         self.object.cleanup()
         self.object.removeNode()
-        self.pe.cleanup()
         self.pe.removeNode()
         if self.message:
             self.message.removeNode()
