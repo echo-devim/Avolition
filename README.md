@@ -6,6 +6,14 @@ The game starts choosing among four characters (Archer, Witch, Knight, Wizard), 
 The game will automatically save your progress each time you pass a level. Actually the game sometimes can lag or crash, over the time new fixes will be released and it should become more stable.
 If your FPS are too low try with a lower resolution.
 
+# Screenshots
+![main](screenshots/main.png)
+![screenshot1](screenshots/screenshot1.png)
+![screenshot2](screenshots/screenshot2.png)
+![screenshot3](screenshots/screenshot3.png)
+![screenshot4](screenshots/screenshot4.png)
+![screenshot5](screenshots/screenshot5.png)
+
 # Installation
 1.  Donwload the compressed archive or make a `git clone`
 2.  Install the cross-platform Panda3D engine with `pip install panda3d`
