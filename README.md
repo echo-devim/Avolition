@@ -14,6 +14,16 @@ If your FPS are too low try with a lower resolution.
 ![screenshot4](screenshots/screenshot4.png)
 ![screenshot5](screenshots/screenshot5.png)
 
+# Keys
+The keyboard configuration is not updated in the game at the moment, thus I report here the current key bindings:
+*  `w a s d` : move the character
+*  `q e` : move the camera (note: zoom-in and zoom-out is disabled)
+*  `mouse 1`: action 1
+*  `mouse 3`: action 2
+*  `v` : View the items menu
+*  `u` : use the current item
+*  `i` : select the next item
+
 # Installation
 1.  Donwload the compressed archive or make a `git clone`
 2.  Install the cross-platform Panda3D engine with `pip install panda3d`
