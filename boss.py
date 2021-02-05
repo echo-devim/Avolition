@@ -505,7 +505,7 @@ class Boss2():
                     if (self.boss.getCurrentAnim() == "attack2"):
                         self.toggleVisibility()
                         if (self.visible == False):
-                            self.stats['hp'] += 5
+                            self.stats['hp'] += 10
                             self.healthBar.setScale(10*self.stats['hp']/self.maxHP,1, 1)
                         
                 elif (self.boss.getCurrentFrame() == self.boss.getNumFrames()-1):
