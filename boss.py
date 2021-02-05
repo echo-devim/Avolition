@@ -36,12 +36,12 @@ class Boss1():
                                             "scream":"models/boss1-monster/monster-scream",
                                             "walk":"models/boss1-monster/monster-walk",
                                             "rwalk":"models/boss1-monster/monster-walk-right",
-                                            "lwalk":"models/boss1-monster/monster-walk-left"}) 
+                                            "lwalk":"models/boss1-monster/monster-walk-left"})
         self.boss.setBlend(frameBlend = True)
         self.boss.setPlayRate(0.8, "walk")
         self.boss.reparentTo(self.node)
         self.boss.setScale(1)
-        #self.boss.setH(180.0)       
+        #self.boss.setH(180.0)
         #self.boss.setBin("opaque", 10)
         #tex = loader.loadTexture('models/boss1-monster/creature1Normal.png')
         #boss1.setTexture(tex, 1)
@@ -100,7 +100,7 @@ class Boss1():
         #self.PC = self.common['PC']
         #taskMgr.doMethodLater(.6, self.runCollisions,'collFor'+str(self.id))
         taskMgr.doMethodLater(1.0, self.setAI, 'setAITask')
-        taskMgr.doMethodLater(1.0, self.damageOverTime,'DOTfor'+str(self.id))   
+        taskMgr.doMethodLater(1.0, self.damageOverTime,'DOTfor'+str(self.id))
         #taskMgr.add(self.runAI, "BossAIfor"+str(id))
 
     def setAI(self, task):
@@ -110,7 +110,7 @@ class Boss1():
         self.AIchar = AICharacter("pursuer",self.node, 200, 0.05, 5)
         self.AIworld.addAiChar(self.AIchar)
         self.AIbehaviors = self.AIchar.getAiBehaviors()
-        
+
         self.AIbehaviors.pursue(self.common['PC'].node)
         # Obstacle avoidance (FIXME)
         #self.AIbehaviors.obstacleAvoidance(0.0001)
@@ -143,7 +143,7 @@ class Boss1():
                 self.coll_quad.removeNode()
                 Sequence(Wait(2.0),LerpPosInterval(self.node, 2.0, VBase3(self.node.getX(),self.node.getY(),self.node.getZ()-5)),Func(self.destroy)).start()
                 return task.done
-        
+
         if self.stats['hp'] < 50:
             self.AIchar.setMass(180)
 
@@ -156,7 +156,7 @@ class Boss1():
                     self.boss.play("hit")
                     self.common['soundPool'].attachAndPlay(self.boss, "creature_roar_01.ogg")
                     self.state = "PLAYINGHIT"
-        
+
         if (self.state == "PLAYINGHIT"):
             if (self.boss.getCurrentFrame() == None) or (self.boss.getCurrentFrame() == self.boss.getNumFrames()-1):
                 self.state = self.previous_state
@@ -274,7 +274,7 @@ class Boss1():
         self.common['monsterList'][self.id]=None
         self.traverser=None
         self.queue=None
-        #self.common['traverser'].removeCollider(self.coll_sphere) 
+        #self.common['traverser'].removeCollider(self.coll_sphere)
         self.coll_body.removeNode()
         self.coll_quad.removeNode()
         self.healthBar.removeNode()
@@ -308,7 +308,7 @@ class Boss2():
                                             "hit":"models/boss2/boss2_hit.bam",
                                             "idle":"models/boss2/boss2_idle.bam",
                                             "attack2":"models/boss2/boss2_attack2.bam",
-                                            "fly":"models/boss2/boss2_flyforward.bam"}) 
+                                            "fly":"models/boss2/boss2_flyforward.bam"})
         self.boss.setBlend(frameBlend = True)
         self.boss.setPlayRate(2, "attack1")
         self.boss.reparentTo(self.node)
@@ -377,7 +377,7 @@ class Boss2():
         self.previous_state=self.state
         #self.PC = self.common['PC']
         #taskMgr.doMethodLater(.6, self.runCollisions,'collFor'+str(self.id))
-        #taskMgr.doMethodLater(1.0, self.damageOverTime,'DOTfor'+str(self.id))   
+        #taskMgr.doMethodLater(1.0, self.damageOverTime,'DOTfor'+str(self.id))
         self.boss.setTransparency(True)
         self.visible = True
         self.bullet=loader.loadModel("models/ball.egg")
@@ -439,10 +439,10 @@ class Boss2():
                 id = len(self.common["random-objects"])
                 object = RandomObject(id, self.common, self.node, render, moneyamount=5)
                 self.common["random-objects"].append(object)
-                
+
                 self.coll_body.node().setIntoCollideMask(BitMask32.allOff())
                 self.coll_quad.removeNode()
-                Interactive(self.common, data.items['key'], self.node.getPos(render))               
+                Interactive(self.common, data.items['key'], self.node.getPos(render))
                 Sequence(Wait(1.0),LerpPosInterval(self.node, 2.0, VBase3(self.node.getX(),self.node.getY(),self.node.getZ()-5)),Func(self.destroy)).start()
                 return task.done
 
@@ -469,14 +469,14 @@ class Boss2():
 
         if self.common['PC'].HP <= 0 or self.node.getDistance(target)>25:
             self.state="IDLE"
-            self.common['spawner'].monster_limit = 3
+            self.common['spawner'].monster_limit = 4
         else:
-            self.common['spawner'].monster_limit = 0
+            self.common['spawner'].monster_limit = 2
             if (random.random() < 0.003) and (self.state == "PURSUING"):
                 self.state="IDLE"
                 self.waitfor = random.randrange(200)
                 return task.again
-            if (random.random() < 0.007) or (self.state == "ATTACKING"):
+            if (random.random() < 0.008) or (self.state == "ATTACKING"):
                 self.state="ATTACKING"
                 if(self.boss.getCurrentAnim()!="attack2") and (self.boss.getCurrentAnim()!="attack1"):
                     if (random.random() < 0.5):
@@ -507,7 +507,7 @@ class Boss2():
                         if (self.visible == False):
                             self.stats['hp'] += 10
                             self.healthBar.setScale(10*self.stats['hp']/self.maxHP,1, 1)
-                        
+
                 elif (self.boss.getCurrentFrame() == self.boss.getNumFrames()-1):
                     #When the animation is finished return to pursuing the player
                     self.state = "PURSUING"
@@ -582,7 +582,7 @@ class Boss2():
         self.common['monsterList'][self.id]=None
         self.traverser=None
         self.queue=None
-        #self.common['traverser'].removeCollider(self.coll_sphere) 
+        #self.common['traverser'].removeCollider(self.coll_sphere)
         self.coll_body.removeNode()
         self.coll_quad.removeNode()
         self.healthBar.removeNode()
