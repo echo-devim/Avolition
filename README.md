@@ -27,7 +27,7 @@ The keyboard configuration is not updated in the game at the moment, thus I repo
 *  `i` : select the next item
 
 # Installation
-1.  Donwload the compressed archive or make a `git clone`
+1.  Donwload the compressed archive (<200MB) or make a `git clone` (~500MB)
 2.  Install the cross-platform Panda3D engine with `pip install panda3d`
 3.  Run the game with `python main.py`
 
