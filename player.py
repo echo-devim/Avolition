@@ -458,12 +458,12 @@ class Player(DirectObject):
         self.maxItems = 5
         self.money = 0
         self.armor = 0
-        coinIco = DirectLabel(image = "icon/coin.png",
+        self.coinIco = DirectLabel(image = "icon/coin.png",
                     frameColor = (0,0,0,0),
                     parent = aspect2d,
                     scale = 0.035,
                     pos = (1, 0, -0.95))
-        coinIco.setTransparency(TransparencyAttrib.MDual)
+        self.coinIco.setTransparency(TransparencyAttrib.MDual)
         self.moneyLabel = DirectLabel(text = str(self.money),
                     text_fg = (1,1,1,1),
                     frameColor = (0,0,0,0),
@@ -476,7 +476,7 @@ class Player(DirectObject):
 
         self.selectedItem = 0
 
-        frm = DirectFrame(frameSize=(0, 0.15, 0, 0.15),
+        self.frmItem = DirectFrame(frameSize=(0, 0.15, 0, 0.15),
                         #frameColor=(0.1,0.4,0.2,0.5),
                         frameTexture='images/frame_blue.png',
                         pos=(0.75, 0, -0.99),
@@ -484,10 +484,10 @@ class Player(DirectObject):
                         parent=aspect2d)
         self.currItemIcon = DirectLabel(relief=None, image=None,
                 pos = (0.075, 0, 0.075),
-                parent = frm,
+                parent = self.frmItem,
                 scale = 0.06)
-        frm.setTransparency(TransparencyAttrib.MDual)
-        frm.setBin('fixed', 1)
+        self.frmItem.setTransparency(TransparencyAttrib.MDual)
+        self.frmItem.setBin('fixed', 1)
 
         self.showCurrentItem()
         self.itemtooltip = None
@@ -1067,6 +1067,8 @@ class Player(DirectObject):
         self.options_slider2.destroy()
         
         self.currItemIcon.removeNode()
+        self.frmItem.removeNode()
+        self.coinIco.removeNode()
         self.closeMenuItems()
         self.actor.cleanup() 
         render.setLightOff()
@@ -1106,7 +1108,8 @@ class Player(DirectObject):
 
         self.coll_ray.removeNode()
         self.coll_sphere.removeNode()
-
+        self.moneyLabel.removeNode()
+        self.currItemIcon.removeNode()
         self.node.setPos(0,0,0)
         self.common['player_node']=self.node
         #self.common.pop('max_level', None)
