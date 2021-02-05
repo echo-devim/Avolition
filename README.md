@@ -4,7 +4,9 @@ Avolition 2 is a cross-platform action RPG game based on [Avolition](https://git
 
 The game starts choosing among four characters (Archer, Witch, Knight, Wizard), each character has its own abilities. You will explore dark dungeons, but pay attention they are full of monsters. There are even boss monsters that can be hard to defeat. You can collect coins and objects, buy new items from the shop to increase your power (don't worry, you don't have to spend real money). Find the keys and unlock the doors (click on the key icon to pick up it).
 The game will automatically save your progress each time you pass a level. Actually the game sometimes can lag or crash, over the time new fixes will be released and it should become more stable.
+Kill the monsters to get the key!
 If your FPS are too low try with a lower resolution.
+
 
 # Screenshots
 ![main](screenshots/main.png)
