@@ -17,7 +17,7 @@ class Boss1():
         id=len(common['monsterList'])-1
         self.id=id
         self.stats={"speed":9,
-            "hp":300,
+            "hp":500,
             "armor":3
             }
         self.totalSpeed=10
@@ -292,7 +292,7 @@ class Boss2():
         id=len(common['monsterList'])-1
         self.id=id
         self.stats={"speed":9,
-            "hp":250,
+            "hp":400,
             "armor":0
             }
         self.totalSpeed=1

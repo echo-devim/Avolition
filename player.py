@@ -545,9 +545,9 @@ class Player(DirectObject):
                 else:
                     self.armor += 0.1
             elif self.items[self.selectedItem]['name'] == "attack boost":
-                self.attack_extra_damage += 1
+                self.attack_extra_damage += 0.5
             elif self.items[self.selectedItem]['name'] == "great attack boost":
-                self.attack_extra_damage += 3
+                self.attack_extra_damage += 2
             elif self.items[self.selectedItem]['name'] == "torch":
                 self.pLight.setAttenuation(Point3(1, 0, 0.5))
             elif self.items[self.selectedItem]['name'] == "boots":
