@@ -20,6 +20,7 @@ from direct.actor.Actor import Actor
 from direct.interval.IntervalGlobal import *
 from direct.showbase.DirectObject import DirectObject
 from direct.gui.DirectGui import *
+from pathlib import Path
 from vfx import vfx
 #from vfx import RayVfx
 import random, sys
@@ -36,10 +37,10 @@ class CharGen(DirectObject):
         self.common=common
         self.common['chargen']=self
         self.load()        
-    def load(self):  
+    def load(self):
+        self.newGame = True
         self.font = loader.loadFont('Bitter-Bold.otf')
         self.common['font']=self.font
-        self.currentLevel=0
         
         self.common['pc_stat1']=50
         self.common['pc_stat2']=50
@@ -240,6 +241,23 @@ class CharGen(DirectObject):
                                     parent=aspect2d)
         self.new_game_button.setBin('fixed', 1)
         self.new_game_button.hide()
+        self.continue_button=DirectButton(frameSize=(-0.2, 0.2, 0, 0.08),
+                                    frameColor=(1,1,1,1),    
+                                    frameTexture='images/level_select.png',
+                                    text_font=self.font,
+                                    text='CONTINUE GAME',
+                                    text_pos = (-0.16,0.026,0),
+                                    text_scale = 0.035,
+                                    text_fg=(0,0,0,1),
+                                    text_align=TextNode.ALeft, 
+                                    textMayChange=1,  
+                                    state=DGG.FLAT,
+                                    relief=DGG.FLAT,
+                                    pos=(0,0,0.4),
+                                    command=self.loadAndStart,
+                                    parent=aspect2d)
+        self.continue_button.setBin('fixed', 1)
+        self.continue_button.hide()
               
         self.cursor=DirectFrame(frameSize=(-32, 0, 0, 32),
                                     frameColor=(1, 1, 1, 1),
@@ -310,7 +328,7 @@ class CharGen(DirectObject):
         taskMgr.add(self.__getMousePos, "chargenMousePos")  
         
         self.current_class=None
-        
+        self.currentLevel=0
         self.camLoop=Sequence(LerpHprInterval(self.cameraNode, 10.0, VBase3(-20,0, 0), bakeInStart=0),LerpHprInterval(self.cameraNode, 10.0, VBase3(20,0, 0),bakeInStart=0))
         self.camLoop.loop()
         self.accept( 'window-event', self.windowEventHandler)
@@ -345,7 +363,12 @@ class CharGen(DirectObject):
         self.fireSound.play()
         taskMgr.add(self.moveArrow, "moveArrowTask") 
         Sequence(Wait(0.5),Func(self.arrow.show)).start()
-        
+    
+    def loadAndStart(self):
+        self.newGame = False
+        self.common['levelLoader'].loadGame(PCLoad=False)
+        self.onStart()
+
     def onStart(self, event=None):
         #unload stuff        
         self.camLoop.pause()
@@ -367,6 +390,7 @@ class CharGen(DirectObject):
         self.Tooltip.destroy()
         self.cursor.destroy()
         self.new_game_button.destroy()
+        self.continue_button.destroy()
         self.close.destroy()
         self.title.destroy()
         self.mp_logo.destroy()
@@ -378,9 +402,17 @@ class CharGen(DirectObject):
         
         #self.common['spawner']=Spawner(self.common)
         #self.common['levelLoader']=LevelLoader(self.common)
-        
+        if not self.newGame and 'max_level' in self.common:
+            self.currentLevel = self.common['max_level']
+        else:
+            self.currentLevel = 0
         self.common['levelLoader'].load(self.currentLevel, PCLoad=False)
         #render.ls()
+        if self.newGame or not 'current_class' in self.common:
+            self.common['current_class'] = self.current_class
+        else:
+            self.current_class = self.common['current_class']
+
         if self.current_class=="1":
             self.common['PC']=Knight(self.common)
             #self.common['PC'].node.setPos(-12, 0, 0)
@@ -396,7 +428,9 @@ class CharGen(DirectObject):
         pos=(data.levels[self.currentLevel]["enter"][0], data.levels[self.currentLevel]["enter"][1], data.levels[self.currentLevel]["enter"][2])     
         self.common['PC'].node.setPos(pos)
         self.common['music'].loop(1, fadeIn=True)
-        
+        if not self.newGame:
+            self.common['levelLoader'].loadGame(PCLoad=True)
+
     def open_www(self, url, event=None):
         webbrowser.open_new(url)
     
@@ -472,7 +506,10 @@ class CharGen(DirectObject):
         for entry in self.common['queue'].getEntries():
             if entry.getIntoNodePath().hasTag("class"):
                 my_class=entry.getIntoNodePath().getTag("class")
-                
+        
+        if Path("save.dat").exists():
+            self.continue_button.show()
+
         if my_class=="1":
 
             self.current_class=my_class

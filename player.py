@@ -470,6 +470,7 @@ class Player(DirectObject):
                     parent = aspect2d,
                     text_font=self.common['font'],
                     text_scale = 0.045,
+                    textMayChange=True,
                     pos = (1.08, 0, -0.95))
         self.menuitems = None
 
@@ -727,6 +728,10 @@ class Player(DirectObject):
     def deleteTooltip(self, args=None):
         self.itemtooltip.delete()
 
+    def updateHealthbar(self):
+        self.healthBar.setScale(10*self.HP/self.MaxHP,1, 1)
+        green=self.HP/self.MaxHP
+        self.healthBar['frameColor']=(1-green, green, 0, 1)
 
     def regenerate(self, task):
         if self.regenCount <= 0:
@@ -739,9 +744,7 @@ class Player(DirectObject):
 
         if self.MaxHP>self.HP>0:
             self.HP+=1
-            self.healthBar.setScale(10*self.HP/self.MaxHP,1, 1)
-            green=self.HP/self.MaxHP
-            self.healthBar['frameColor']=(1-green, green, 0, 1)
+            self.updateHealthbar()
         return task.again
 
     def optionsSet(self, opt, event=None):
@@ -1106,6 +1109,8 @@ class Player(DirectObject):
 
         self.node.setPos(0,0,0)
         self.common['player_node']=self.node
+        #self.common.pop('max_level', None)
+        self.common.pop('current_class', None)
         self.common['CharGen'].load()
 
 class Knight(Player):      

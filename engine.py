@@ -28,6 +28,8 @@ from vfx import short_vfx
 import random
 import data
 import json
+import pickle
+from pathlib import Path
 from direct.particles import Particles
 from panda3d.physics import BaseParticleRenderer
 from panda3d.physics import PointParticleRenderer
@@ -803,14 +805,44 @@ class LevelLoader():
         level=1+self.common["current_level"]
         self.load(level)
 
+    def saveGame(self):
+        #Save dict to file
+        player=self.common['PC']
+        data={"level" : self.common['max_level'], "money" : player.money, "character" : self.common['current_class'], "items" : player.items,
+        "armor" : player.armor, "speed" : player.speed, "HP" : player.HP, "extra_attack" : player.attack_extra_damage}
+        with open('save.dat', 'wb') as f:
+            pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+
+    def loadGame(self, PCLoad=False):
+        if not Path("save.dat").exists():
+            return False
+        #load dict from file
+        with open('save.dat', 'rb') as f:
+            data = pickle.load(f)
+        self.common['max_level'] = data["level"]
+        self.common['current_class'] = data['character']
+        if PCLoad:
+            player=self.common['PC']
+            player.money = data['money']
+            player.moneyLabel.setText(str(player.money))
+            player.items = data['items']
+            player.showCurrentItem()
+            player.armor = data['armor']
+            player.speed = data['speed']
+            player.HP = data['HP']
+            
+            player.attack_extra_damage = data['extra_attack']
+        return True
+
     def load(self, level=0, PCLoad=True):
         map_name=data.levels[level]["map_name"]
         map_monsters=data.levels[level]["map_monsters"]
         self.common["current_level"]=level
         self.unload()
+        #Save the game only if the player has reached a new level
         if level>self.common['max_level']:
             self.common['max_level']=level
-            #self.saveLevel(level)
+            self.saveGame()
 
         #map
         self.common['map']=loader.loadModel(map_name)
