@@ -829,6 +829,7 @@ class LevelLoader():
             player.armor = data['armor']
             player.speed = data['speed']
             player.HP = data['HP']
+            player.updateHealthbar()
             
             player.attack_extra_damage = data['extra_attack']
         return True

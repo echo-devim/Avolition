@@ -1707,7 +1707,6 @@ class Archer(Player):
         self.arrows=[]
         
         
-        
         self.damage_delta=(1.0+self.common['pc_stat3']/50.0)
         self.crit_hit=(5+(101-self.common['pc_stat3'])/2)/100.0
         self.crit_dmg=5+(101-self.common['pc_stat3'])/5
