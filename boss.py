@@ -586,6 +586,9 @@ class Boss2():
         self.coll_body.removeNode()
         self.coll_quad.removeNode()
         self.healthBar.removeNode()
+        self.ambientLightNode.removeNode()
+        self.ambientLightBulletNode.removeNode()
+        self.ambientLightBulletNode.removeNode()
         #base.sfxManagerList[0].update()
         #print  " list, ALL DONE!"
         #print self.common['monsterList']
