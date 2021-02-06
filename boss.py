@@ -18,7 +18,7 @@ class Boss1():
         self.id=id
         self.stats={"speed":9,
             "hp":500,
-            "armor":3
+            "armor":5
             }
         self.totalSpeed=10
         self.sparkSum=0
@@ -107,7 +107,7 @@ class Boss1():
         #Creating AI World
         self.AIworld = AIWorld(render)
 
-        self.AIchar = AICharacter("pursuer",self.node, 200, 0.05, 5)
+        self.AIchar = AICharacter("pursuer",self.node, 140, 0.05, 7)
         self.AIworld.addAiChar(self.AIchar)
         self.AIbehaviors = self.AIchar.getAiBehaviors()
 
@@ -145,7 +145,7 @@ class Boss1():
                 return task.done
 
         if self.stats['hp'] < 50:
-            self.AIchar.setMass(180)
+            self.AIchar.setMass(self.AIchar.getMass()-20)
 
         if (self.state == "HIT"):
             rn = 0.005
@@ -182,7 +182,7 @@ class Boss1():
             else:
                 if self.node.getDistance(target)>2:
                     #If the boss is idle or has finished to play an animation (e.g. an attack) he must pursue the player
-                    if self.state == "IDLE" or self.boss.getCurrentAnim() == None:
+                    if self.state == "HIT" or self.state == "IDLE" or self.boss.getCurrentAnim() == None:
                         self.state="PURSUING"
                     if self.state == "PURSUING":
                         self.AIworld.update()
