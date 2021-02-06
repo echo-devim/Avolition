@@ -251,18 +251,22 @@ class Monster():
         if self.stats['hp']>300:
             self.stats['hp']=300
         self.maxHP=self.stats['hp']
-        self.healthBar=DirectFrame(frameSize=(37, 0, 0, 6),
+        self.healthBar=DirectFrame(frameSize=(-0.05, 0.05, 0, 0.05),
                                     frameColor=(1, 0, 0, 1),
                                     frameTexture='icon/glass4.png',
-                                    parent=pixel2d)
+                                    parent=self.node)
         self.healthBar.setTransparency(TransparencyAttrib.MDual)
         self.healthBar.setScale(10,1, 1)
-        #self.healthBar.reparentTo(self.node)
+        self.healthBar.setZ(2)
+        self.healthBar.setBillboardPointEye() #Make it flat in front of the camera
+        self.ambientLight=AmbientLight('ambientLight')
+        self.ambientLight.setColor(VBase4(.3, .3, .3, 1))
+        self.ambientLightNode = render.attachNewNode(self.ambientLight)
+        self.healthBar.setLight(self.ambientLightNode)
+        self.healthBar.hide()
         wp = base.win.getProperties()
         winX = wp.getXSize()
         winY = wp.getYSize()
-        self.healthBar.setPos(71-256+winX/2,0,34-winY)
-        self.healthBar.hide()
 
         #self.HPring.setColorScale(0.0, 1.0, 0.0, 1.0)
 
@@ -384,7 +388,7 @@ class Monster():
         self.stats['hp']-=damage
         self.healthBar.show()
         self.healthBar.setScale(10*self.stats['hp']/self.maxHP,1, 1)
-        taskMgr.doMethodLater(3.0, self.hideHealthbarTask,'hideHealthbar')
+        taskMgr.doMethodLater(7.0, self.hideHealthbarTask,'hideHealthbar')
         if self.stats['hp']<1:
             self.healthBar.hide()
 
@@ -583,6 +587,7 @@ class Monster():
         self.traverser=None
         self.queue=None
         self.healthBar.removeNode()
+        self.ambientLightNode.removeNode()
         #base.sfxManagerList[0].update()
         #print  " list, ALL DONE!"
         #print self.common['monsterList']
