@@ -1143,6 +1143,7 @@ class Knight(Player):
         self.MaxHP=75 #50.0+float(self.common['pc_stat1'])
         self.HPregen=round((101-self.common['pc_stat1'])/100.0, 1)
         self.armor=0.2
+        self.oldArmor=self.armor
         self.speed=(75+(101-self.common['pc_stat2'])/2)/100.0
         self.actor.setPlayRate(self.speed, "walk")
         self.baseDamage=(1.0+self.common['pc_stat3']/50.0)
@@ -1256,16 +1257,21 @@ class Knight(Player):
             if self.shieldUp>=15:
                 #self.isBlockin=False 
                 Sequence(Wait(0.3), Func(self.unBlock)).start()
-                return task.again 
-            self.isBlockin=True     
+                return task.again
             self.shieldUp+=1
+            if self.isBlockin==False:
+                self.oldArmor=self.armor
+                self.armor=1
+
             #self.cursor['frameTexture']='icon/shield.png' 
             self.cursorPowerUV2[0]+=0.25
             if self.cursorPowerUV2[0]>0.75:
                 self.cursorPowerUV2[0]=0
                 self.cursorPowerUV2[1]+=-0.25
             self.cursorPower2.stateNodePath[0].setTexOffset(TextureStage.getDefault(),self.cursorPowerUV2[0], self.cursorPowerUV2[1]) 
-        else:            
+        else:
+            if self.isBlockin==True:
+                self.armor = self.oldArmor
             self.isBlockin=False
             if self.shieldUp<0:            
                return task.again

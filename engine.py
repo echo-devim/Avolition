@@ -373,10 +373,10 @@ class Monster():
     def hideHealthbarTask(self, task):
         self.healthBar.hide()
 
-    def doDamage(self, damage, igoreArmor=False):
+    def doDamage(self, damage, ignoreArmor=False):
         if self.state=="DIE":
             return
-        if not igoreArmor:
+        if not ignoreArmor:
             damage-=self.stats['armor']
         if damage<1:
             damage=1
