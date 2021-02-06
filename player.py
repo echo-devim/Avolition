@@ -1115,6 +1115,9 @@ class Player(DirectObject):
         #self.common.pop('max_level', None)
         self.common.pop('current_class', None)
         self.common['CharGen'].load()
+        for soundname in self.sounds:
+            if self.sounds[soundname].status() == self.sounds[soundname].PLAYING:
+                self.sounds[soundname].stop()
 
 class Knight(Player):
 
@@ -1978,7 +1981,6 @@ class Archer(Player):
 
         self.common['traverser'].removeCollider(self.coll_ray)
         self.common['traverser'].removeCollider(self.coll_sphere)
-
 
         self.coll_ray.removeNode()
         self.coll_sphere.removeNode()
