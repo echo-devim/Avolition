@@ -55,7 +55,11 @@ class SoundPool():
         #print id, " plays:",  sound
         self.sounds[id][sound].play()
 
-    def attachAndPlay(self, target, soundname, volume=1):
+    def playDelayed(self, sound, task):
+        sound.play()
+        return task.done
+
+    def attachAndPlay(self, target, soundname, volume=1, delay=0):
         sfx3d=None
         for snd in self.audio3d.getSoundsOnObject(target):
             if (snd.getName() == soundname):
@@ -65,7 +69,7 @@ class SoundPool():
             sfx3d = self.audio3d.loadSfx("sfx/" + soundname)
             self.audio3d.attachSoundToObject(sfx3d, target)
             sfx3d.setVolume(volume)
-        sfx3d.play()
+        taskMgr.doMethodLater(delay, self.playDelayed, "delaysound", extraArgs=[sfx3d], appendTask=True)
 
 
     def get_id(self):
@@ -123,17 +127,17 @@ class SoundPool2D():
             return self.free_nodes.pop()
         else:
             raise Exception("Out of sound pools")
-            
+
     def set_target(self, id, node):
         self.targets[id]=node
-    
+
     def set_free(self,id):
         self.free_nodes.append(id)
         self.targets[id]=None
-        
+
     def update(self, task):
         for target in self.targets:
             if self.targets[target]:
                 self.sound_nodes[target].setPos(self.targets[target].getPos(render))
                 self.sound_nodes[target].lookAt(base.camera)
-        return task.again 
+        return task.again

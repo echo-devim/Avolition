@@ -202,6 +202,7 @@ class Boss1():
                             self.common['soundPool'].attachAndPlay(self.boss, "Whoosh4.ogg")
                             self.boss.attackdamage = 20
                         else:
+                            self.common['soundPool'].attachAndPlay(self.boss, "explodemini.wav", delay=1)
                             self.boss.play("attack1")
                             self.boss.attackdamage = 30
                     # Inflict damage only when we played half of the animation (it should be the moment when the attack hits the player)
@@ -210,7 +211,6 @@ class Boss1():
                     elif (self.boss.getCurrentFrame() == int(self.boss.getNumFrames()/2)) and (self.boss.getCurrentFrame() != self.boss.lastFrame):
                         if (self.boss.getCurrentAnim() == "attack1"):
                             #The sound must be played only when the boss hit the floor (it's in the mid of the animation)
-                            self.common['soundPool'].attachAndPlay(self.boss, "explodemini.wav")
                             # Get position of the joint respect to render (i.e. absolute position)
                             (x,y,_) = self.left_thumb.getPos(render)
                             vfx(None, texture='vfx/dust.png',scale=1, Z=0, depthTest=True, depthWrite=True,pos=(x,y,0)).start(0.016)
