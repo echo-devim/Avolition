@@ -370,6 +370,9 @@ class Monster():
                             Sequence(Wait(1.5), Func(self.restart)).start()
                             return True
 
+    def hideHealthbarTask(self, task):
+        self.healthBar.hide()
+
     def doDamage(self, damage, igoreArmor=False):
         if self.state=="DIE":
             return
@@ -381,6 +384,7 @@ class Monster():
         self.stats['hp']-=damage
         self.healthBar.show()
         self.healthBar.setScale(10*self.stats['hp']/self.maxHP,1, 1)
+        taskMgr.doMethodLater(3.0, self.hideHealthbarTask,'hideHealthbar')
         if self.stats['hp']<1:
             self.healthBar.hide()
 
@@ -562,6 +566,8 @@ class Monster():
             self.actor.cleanup()
             self.actor.removeNode()
             #print  " actor",
+        if taskMgr.hasTaskNamed("hideHealthbar"):
+            taskMgr.remove("hideHealthbar")
         if taskMgr.hasTaskNamed("AIfor"+str(self.id)):
             taskMgr.remove("AIfor"+str(self.id))
             #print  " AI",
