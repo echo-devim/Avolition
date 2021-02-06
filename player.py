@@ -105,14 +105,18 @@ class Player(DirectObject):
         self.audio3d=common['audio3d']
 
         if not self.common['safemode']:
-            wall_shader=loader.loadShader('shaders/tiles.sha')
-            black_shader=loader.loadShader('shaders/black_parts.sha')
-            floor_shader=loader.loadShader('shaders/floor.sha')
-            self.floor.setShader(floor_shader)
-            self.walls.setShader(wall_shader)
-            self.black.setShader(black_shader)
+            try:
+                wall_shader=loader.loadShader('shaders/tiles.sha')
+                black_shader=loader.loadShader('shaders/black_parts.sha')
+                floor_shader=loader.loadShader('shaders/floor.sha')
+                self.floor.setShader(floor_shader)
+                self.walls.setShader(wall_shader)
+                self.black.setShader(black_shader)
 
-            self.floor.hide(BitMask32.bit(1))
+                self.floor.hide(BitMask32.bit(1))
+            except:
+                print("Exception while loading shaders, probably they were already loaded")
+                pass
 
         #parent node
         if 'player_node' in common:
