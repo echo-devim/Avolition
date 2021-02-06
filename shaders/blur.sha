@@ -33,9 +33,9 @@ void fshader(float2 l_texcoord0 : TEXCOORD0,
     
 
     float4 c = 0;
-    for(int i = 0 ; i < 12 ; i++)
+    for(int i = 0 ; i < 9 ; i++)
     {
-        c += tex2D(tex_0, l_texcoord0 + samples[i] * 0.006);
+        c += tex2D(tex_0, l_texcoord0 + samples[i] * 0.004);
     }
     c /=13;
     o_color =c;    
