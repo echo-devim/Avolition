@@ -42,8 +42,8 @@ class Interactive():
        'model' - path to a bam or eg model
        'scale' - uniform or XYZ scale
        'gui' - path to a gui picture
-       'command' - command executed on click 
-      Each of these can be overriden by an argument of the same name.'''           
+       'command' - command executed on click
+      Each of these can be overriden by an argument of the same name.'''
     def __init__(self, common, proto, pos, model=None, scale=None, gui=None, command=None):
         common['interactiveList'].append(self)
         self.id=len(common['interactiveList'])-1
@@ -78,9 +78,9 @@ class Interactive():
         self.gui.flattenLight()
         self.gui.setTransparency(TransparencyAttrib.MDual)
         if command:
-            self.gui.bind(DGG.B1PRESS, self._execute, [command]) 
+            self.gui.bind(DGG.B1PRESS, self._execute, [command])
         else:
-            self.gui.bind(DGG.B1PRESS, self._execute, [proto['command']])         
+            self.gui.bind(DGG.B1PRESS, self._execute, [proto['command']])
         self.gui.setBin('fixed', -10)
         self.gui.hide()
 
@@ -210,7 +210,8 @@ class RandomObject():
         self.ambientLightNode.removeNode()
 
 class Monster():
-    def __init__(self, setup_data, common, level=1.0, start_pos=(0,0,0)):
+    def __init__(self, setup_data, common, start_pos=(0,0,0)):
+        level=common['max_level']+1 # max_level is the current level starting from 0
         common['monsterList'].append(self)
         id=len(common['monsterList'])-1
         self.monsterList=common['monsterList']
@@ -244,12 +245,12 @@ class Monster():
         self.vfx=setup_data["hit_vfx"]
 
         self.stats={"speed":setup_data["speed"],
-                    "hp":setup_data["hp"]*level,
-                    "armor":setup_data["armor"]*level,
-                    "dmg":setup_data["dmg"]*level
+                    "hp":setup_data["hp"]*(level**0.15),
+                    "armor":setup_data["armor"]*(level**0.2),
+                    "dmg":setup_data["dmg"]*(level**0.8)
                     }
-        if self.stats['hp']>300:
-            self.stats['hp']=300
+        if self.stats['hp']>500:
+            self.stats['hp']=500
         self.maxHP=self.stats['hp']
         self.healthBar=DirectFrame(frameSize=(-0.05, 0.05, 0, 0.05),
                                     frameColor=(1, 0, 0, 1),
@@ -335,7 +336,7 @@ class Monster():
         self.node.setPos(render,start_pos)
         taskMgr.add(self.runAI, "AIfor"+str(self.id))
         taskMgr.doMethodLater(.6, self.runCollisions,'collFor'+str(self.id))
-        taskMgr.doMethodLater(1.0, self.damageOverTime,'DOTfor'+str(self.id))    
+        taskMgr.doMethodLater(1.0, self.damageOverTime,'DOTfor'+str(self.id))
 
     def die(self, soundname):
         n = random.random()
@@ -426,7 +427,7 @@ class Monster():
         else:
             vfx(self.node, texture=self.vfx,scale=.5, Z=1.0, depthTest=True, depthWrite=True).start(0.016)
 
-        self.doDamage(damage)         
+        self.doDamage(damage)
 
         if self.stats['hp']<1:
             if sound:
@@ -474,7 +475,7 @@ class Monster():
         '''distance={}
         for target in self.PC.myWaypoints:
             for waypoint in valid_waypoints:
-                distance[target]=self.waypoints_data[target][waypoint]                
+                distance[target]=self.waypoints_data[target][waypoint]
                 print(target, distance[target])
         if distance:
             self.nextWaypoint=self.waypoints[min(distance, key=distance.get)]
@@ -561,7 +562,7 @@ class Monster():
         #    self.soundset[sound].stop()
         #print  "destroy:",
         #self.sound_node.reparentTo(render)
-        #self.common['soundPool'].append([self.sound_node,self.soundset])        
+        #self.common['soundPool'].append([self.sound_node,self.soundset])
         self.common['soundPool'].set_free(self.soundID)
         #self.sounds=None
         #print  " sounds",
@@ -644,11 +645,11 @@ class Spawner():
             final_point=points_in_range.pop(random.randrange(len(points_in_range)-1))
             if final_point==self.last_spawnpoint:
                 if len(points_in_range)>1:
-                    final_point=points_in_range.pop(random.randrange(len(points_in_range)-1)) 
+                    final_point=points_in_range.pop(random.randrange(len(points_in_range)-1))
             self.last_spawnpoint=final_point
             #Monster(data.monsters[random.randrange(1,10)].copy(), self.common, self.level, final_point.getPos(render))
             #Monster(data.monsters[15].copy(), self.common, self.level, final_point.getPos(render))
-            Monster(data.monsters[random.choice(self.monster_type)].copy(), self.common, self.level, final_point.getPos(render))
+            Monster(data.monsters[random.choice(self.monster_type)].copy(), self.common, final_point.getPos(render))
             #self.level+=0.1
             #print "spawn!"
         return task.again
@@ -733,7 +734,7 @@ class MusicPlayer():
         self.musicList[self.nextTrack].setLoop(False)
         time=self.musicList[self.nextTrack].length()
         #print time
-        self.seq=Sequence(LerpFunc(base.musicManager.setVolume,fromData=self.volume,toData=0.0,duration=1.0),        
+        self.seq=Sequence(LerpFunc(base.musicManager.setVolume,fromData=self.volume,toData=0.0,duration=1.0),
                         Wait(1.0),
                         Func(self.musicList[self.track].stop),
                         Func(self.musicList[self.nextTrack].play),
@@ -748,7 +749,7 @@ class MusicPlayer():
             base.musicManager.setVolume(0)
             LerpFunc(base.musicManager.setVolume,fromData=0.0,toData=self.volume,duration=5.0).start()
 
-        if self.musicList[self.track].status() == self.musicList[self.track].PLAYING: 
+        if self.musicList[self.track].status() == self.musicList[self.track].PLAYING:
             self.musicList[self.track].stop()
         if track>=len(self.musicList):
                 track=1
@@ -841,7 +842,7 @@ class LevelLoader():
             player.speed = data['speed']
             player.HP = data['HP']
             player.updateHealthbar()
-            
+
             player.attack_extra_damage = data['extra_attack']
         return True
 
@@ -884,7 +885,7 @@ class LevelLoader():
             pos=(data.levels[level]["enter"][0], data.levels[level]["enter"][1], data.levels[level]["enter"][2])
             self.common['PC'].node.setPos(pos)
 
-        pos=(data.levels[level]["exit"][0], data.levels[level]["exit"][1], data.levels[level]["exit"][2])    
+        pos=(data.levels[level]["exit"][0], data.levels[level]["exit"][1], data.levels[level]["exit"][2])
         Interactive(self.common, data.items['exit'],pos)
 
         self.common["kills"]= data.levels[level]["kills_for_key"]
