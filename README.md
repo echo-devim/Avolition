@@ -22,7 +22,7 @@ The keyboard configuration is not updated in the game at the moment, thus I repo
 *  `q e` : move the camera (note: zoom-in and zoom-out is disabled)
 *  `mouse 1`: action 1
 *  `mouse 3`: action 2
-*  `v` : View the items menu
+*  `v` : View/Hide the items menu
 *  `u` : use the current item
 *  `i` : select the next item
 
